@@ -1,0 +1,25 @@
+64-0:0:ce7 "Swisscom CH"     193.247.170.170  nPaths=102  nHops=6  time=2.8237ms  ICMP=4.2ms
+64-0:0:32e6 "Init7 CH"     82.197.165.66  nPaths=2  nHops=4  time=4.0025ms  ICMP=4.0ms
+64-2:0:4 "Mobile Connections POC (Swisscom SIM cards)"     193.247.170.86  nPaths=204  nHops=7  time=4.6820ms  ICMP=4.5ms
+# 65-2:0:20 "Telindus"     10.10.4.1  nPaths=120  nHops=7  time=12.0419ms  ICMP=2.8ms
+# 71-0:0:58 "Princeton University"   71-0:0:e1 "University of Virginia"     127.0.0.1  nPaths=4  nHops=7  time=154.7822ms  ICMP=0.2ms
+# 71-2:0:48 "Equinix"     127.0.0.1  nPaths=8  nHops=7  time=111.9329ms  ICMP=0.2ms
+71-2:0:4a "Ovgu"     141.44.25.151  nPaths=4  nHops=6  time=22.7755ms  ICMP=23.2ms
+# 71-2:0:5c "Universidade Federal de Mato Grosso do Sul"     127.0.0.1  nPaths=8  nHops=6  time=150.1869ms  ICMP=0.3ms
+
+AS Stats:
+ all        = 111
+ success    = 66
+ no path    = 33
+ timeout    = 0
+ error      = 8
+ not listed = 1
+Path Stats:
+ all        = 8222
+ success    = 8218
+ timeout    = 3
+ICMP Stats:
+ all        = 66
+ success    = 8
+ timeout    = 58
+ error      = 0

@@ -1,0 +1,125 @@
+64-0:0:22f "SWITCH CH"     130.59.44.218  nPaths=2  nHops=2  time=3.9447ms  ICMP=TIMEOUT
+64-0:0:ce7 "Swisscom CH"     193.247.170.170  nPaths=102  nHops=6  time=2.8237ms  ICMP=4.2ms
+64-0:0:1a4a "Sunrise CH"     10.196.8.59  nPaths=102  nHops=5  time=2.8929ms  ICMP=TIMEOUT
+64-0:0:206c "Swisscom Lab"     10.0.0.1  nPaths=204  nHops=7  time=4.8768ms  ICMP=TIMEOUT
+64-0:0:22b3 "UBS Switzerland"   No path found from 64-2:0:9 to 64-0:0:22b3
+64-0:0:303e "VTX CH"     10.60.200.14  nPaths=110  nHops=6  time=5.9289ms  ICMP=TIMEOUT
+64-0:0:32e6 "Init7 CH"     82.197.165.66  nPaths=2  nHops=4  time=4.0025ms  ICMP=4.0ms
+64-0:0:3d07 "Cyberlink"     2001:8a8:a:0:0:0:0:a  nPaths=110  nHops=5  time=2.7386ms  ICMP=TIMEOUT
+64-0:0:6177 "EveryWare CH"   No path found from 64-2:0:9 to 64-0:0:6177
+64-0:3:72 "SNB CH"     192.168.142.23  nPaths=4  nHops=4  time=1.9964ms  ICMP=TIMEOUT
+64-2:0:0 "Anapaya Zurich Internet Collection"     192.168.120.1  nPaths=240  nHops=7  time=2.6892ms  ICMP=TIMEOUT
+64-2:0:2 "SIX Integration Environment"     10.236.205.250  nPaths=204  nHops=7  time=2.9204ms  ICMP=TIMEOUT
+64-2:0:3 "ZKB CH"     10.0.0.1  nPaths=2  nHops=6  time=7.0810ms  ICMP=TIMEOUT
+64-2:0:4 "Mobile Connections POC (Swisscom SIM cards)"     193.247.170.86  nPaths=204  nHops=7  time=4.6820ms  ICMP=4.5ms
+64-2:0:5 "Mobile Connections POC (Swisscom SIM cards)"   No path found from 64-2:0:9 to 64-2:0:5
+64-2:0:9 "ETH Zurich (ETHZ)"    -> local AS, no timing available
+64-2:0:c "Swiss National Supercomputing Centre (CSCS)"     148.187.128.130  nPaths=4  nHops=4  time=4.9965ms  ICMP=TIMEOUT
+64-2:0:13 "Anapaya CONNECT Zurich"     2a0f:a580:2:0:0:0:0:2  nPaths=120  nHops=5  time=2.8177ms  ICMP=TIMEOUT
+64-2:0:14 "Eidgenössisches Departement für auswärtige Angelegenheiten"     162.23.42.62  nPaths=102  nHops=6  time=3.8619ms  ICMP=TIMEOUT
+64-2:0:17 "Axpo WZ Systems CH"     172.26.4.38  nPaths=240  nHops=7  time=3.8356ms  ICMP=TIMEOUT
+64-2:0:1a "Anapaya Zurich Hardturm"     10.0.0.1  nPaths=204  nHops=7  time=2.9621ms  ICMP=TIMEOUT
+64-2:0:1b "Sunrise Test AS"   No path found from 64-2:0:9 to 64-2:0:1b
+64-2:0:1d "Swisscom CH Test"   No path found from 64-2:0:9 to 64-2:0:1d
+64-2:0:1f "Sunrise Test AS"   No path found from 64-2:0:9 to 64-2:0:1f
+64-2:0:21 "Sunrise Test AS 3"     192.168.1.33  nPaths=102  nHops=8  time=2.9129ms  ICMP=TIMEOUT
+64-2:0:22 "Sunrise Ambassador House CH ISD"     192.168.1.17  nPaths=204  nHops=7  time=2.9569ms  ICMP=TIMEOUT
+64-2:0:23 "InterCloud CH Zurich"     10.10.0.1  nPaths=120  nHops=5  time=2.5986ms  ICMP=TIMEOUT
+64-2:0:27 "Cyberlink Customer A"     fdab:1def:a0fa:ce77:0:0:0:1  nPaths=220  nHops=6  time=2.9375ms  ICMP=TIMEOUT
+64-2:0:28 "Cyberlink Cloud Test AS"     100.120.103.2  nPaths=220  nHops=7  time=2.8970ms  ICMP=TIMEOUT
+64-2:0:29 "VBS"   No path found from 64-2:0:9 to 64-2:0:29
+64-2:0:2a "CyberLink"   No path found from 64-2:0:9 to 64-2:0:2a
+64-2:0:2b "Armasuisse CYD Campus Zürich"     192.168.111.1  nPaths=2  nHops=4  time=3.0225ms  ICMP=TIMEOUT
+64-2:0:2c "Armasuisse Thun"     192.168.110.1  nPaths=204  nHops=7  time=6.9564ms  ICMP=TIMEOUT
+64-2:0:2d "Armasuisse Lausanne"     192.168.112.1  nPaths=102  nHops=6  time=5.9996ms  ICMP=TIMEOUT
+64-2:0:30 "AWK Group AG"   No path found from 64-2:0:9 to 64-2:0:30
+64-2:0:34 "BNC"   No path found from 64-2:0:9 to 64-2:0:34
+64-2:0:36 "RUAG"     192.168.22.128  nPaths=204  nHops=6  time=5.0945ms  ICMP=TIMEOUT
+64-2:0:37 "UBS"     10.10.198.243  nPaths=408  nHops=7  time=2.9329ms  ICMP=TIMEOUT
+64-2:0:38 "UBS"   No path found from 64-2:0:9 to 64-2:0:38
+64-2:0:3a "Mysten"     10.42.48.1  nPaths=220  nHops=6  time=2.8668ms  ICMP=TIMEOUT
+64-2:0:41 "RUAG"     192.168.25.128  nPaths=204  nHops=6  time=6.7896ms  ICMP=TIMEOUT
+64-2:0:44 "VTX"     192.168.40.241  nPaths=440  nHops=7  time=10.4088ms  ICMP=TIMEOUT
+64-2:0:45 "VTX"     192.168.40.254  nPaths=110  nHops=6  time=28.9115ms  ICMP=TIMEOUT
+64-2:0:46 "Swisscom"     192.168.2.1  nPaths=204  nHops=7  time=2.8772ms  ICMP=TIMEOUT
+64-2:0:4c "AWS PoC Anapaya"     10.0.0.220  nPaths=120  nHops=8  time=3.9181ms  ICMP=TIMEOUT
+64-2:0:4e "Infoguard Practical Thesis - Bern"     10.94.200.100  nPaths=240  nHops=8  time=10.0646ms  ICMP=TIMEOUT
+64-2:0:4f "Infoguard Honeypot"     172.20.28.20  nPaths=240  nHops=8  time=5.7387ms  ICMP=TIMEOUT
+64-2:0:53 "Everyware Lab 1"   No path found from 64-2:0:9 to 64-2:0:53
+64-2:0:54 "Everyware Lab 2"   No path found from 64-2:0:9 to 64-2:0:54
+64-2:0:56 "Armasuisse Andermatt"     192.168.140.1  nPaths=204  nHops=8  time=4.9573ms  ICMP=TIMEOUT
+64-2:0:5d "BIS Innovation Hub Centre - Switzerland"     10.134.1.14  nPaths=2  nHops=4  time=3.7833ms  ICMP=TIMEOUT
+64-2:0:62 "Infoguard Practical Thesis Lab - Zug"     172.20.28.100  nPaths=240  nHops=9  time=5.8703ms  ICMP=TIMEOUT
+65-0:0:e26d "International Committee of the Red Cross"     172.17.0.12  nPaths=120  nHops=8  time=12.9616ms  ICMP=TIMEOUT
+65-2:0:f "Anapaya CONNECT Frankfurt"     2a0f:a580:0:100:0:0:0:1  nPaths=120  nHops=6  time=7.8923ms  ICMP=TIMEOUT
+65-2:0:19 "Anapaya Frankfurt"     172.31.1.105  nPaths=120  nHops=8  time=8.8240ms  ICMP=TIMEOUT
+65-2:0:20 "Telindus"     10.10.4.1  nPaths=120  nHops=7  time=12.0419ms  ICMP=2.8ms
+65-2:0:24 "InterCloud FR Paris"     10.10.0.1  nPaths=120  nHops=7  time=11.9270ms  ICMP=TIMEOUT
+65-2:0:25 "InterCloud AWS"   No path found from 64-2:0:9 to 65-2:0:25
+65-2:0:42 "Mysten"     10.42.1.4  nPaths=120  nHops=8  time=13.9127ms  ICMP=TIMEOUT
+65-2:0:4b "Martincoit Networks"   No path found from 64-2:0:9 to 65-2:0:4b
+65-2:0:50 "Mainstreaming Milano"   No path found from 64-2:0:9 to 65-2:0:50
+65-2:0:51 "Intercloud UK"     169.254.2.4  nPaths=120  nHops=7  time=16.9966ms  ICMP=TIMEOUT
+65-2:0:58 "Mysten Labs"   No path found from 64-2:0:9 to 65-2:0:58
+65-2:0:5a "Mysten Labs London"   ERROR: Error while getting Segment info: UNKNOWN: fetching failed: processing reply: all segments failed to verify: [ segment verification error {as=65-2:0:5a; seg=ID: 7c2dd8a2d71fedf1aec3fe58 Timestamp: 2024-05-17 07:24:06+0000 Hops: 65-2:0:51 11>1 65-2:0:5a}: getting chains {query.date=2024-05-17 11:43:45.157177+0000; query.isd_as=65-2:0:5a; query.subject_key_id=ba6a97fe81418afce6189b3efdb88112150b1b31}: fetching chains from remote {server=65-2:0:51,169.254.2.4:30252}: receiving chains: rpc error: code = Unknown desc = recursion not allowed: client outside local AS {addr=64-2:0:9,192.168.53.20:32769}: recursion not allowed ]
+65-2:0:5e "BIS Innovation Hub Centre - Eurosystem - Frankfurt"     10.134.1.19  nPaths=120  nHops=8  time=17.8360ms  ICMP=TIMEOUT
+66-0:0:eca "LG Uplus Corp."     10.10.10.19  nPaths=120  nHops=7  time=202.7123ms  ICMP=TIMEOUT
+66-2:0:1 "SNB Singapore"     192.168.88.240  nPaths=240  nHops=9  time=215.7469ms  ICMP=TIMEOUT
+66-2:0:10 "Anapaya CONNECT Singapore"     2a0f:a580:0:200:0:0:0:1  nPaths=120  nHops=6  time=212.3085ms  ICMP=TIMEOUT
+66-2:0:11 "Anapaya CONNECT Hong Kong"     2a0f:a580:0:300:0:0:0:1  nPaths=120  nHops=6  time=155.8934ms  ICMP=TIMEOUT
+66-2:0:15 "Schweizerische Botschaft in der Republik Korea"     162.23.19.253  nPaths=120  nHops=9  time=205.9847ms  ICMP=TIMEOUT
+66-2:0:16 "Panmunjeom"     162.23.19.245  nPaths=120  nHops=9  time=205.7233ms  ICMP=TIMEOUT
+66-2:0:18 "SEC Singapore"   No path found from 64-2:0:9 to 66-2:0:18
+66-2:0:47 "Mysten"   No path found from 64-2:0:9 to 66-2:0:47
+66-2:0:55 "Intercloud JP"     169.254.2.5  nPaths=120  nHops=6  time=241.8184ms  ICMP=TIMEOUT
+66-2:0:59 "Mysten Labs"   No path found from 64-2:0:9 to 66-2:0:59
+66-2:0:5f "BIS Innovation Hub Centre - Hong Kong SAR"   No path found from 64-2:0:9 to 66-2:0:5f
+66-2:0:60 "BIS Innovation Hub Centre - Singapore"   No path found from 64-2:0:9 to 66-2:0:60
+67-2:0:1c "Swisscom US"   ERROR: Error while getting Segment info: UNKNOWN: invalid request {dst=67-2:0:1c; reason=core segment request src ISD not local ISD; src=67-0}
+67-2:0:1e "Swisscom Outpost"   No path found from 64-2:0:9 to 67-2:0:1e
+67-2:0:26 "InterCloud US Ashburn"     10.10.0.1  nPaths=120  nHops=8  time=91.1842ms  ICMP=TIMEOUT
+67-2:0:43 "Mysten"     10.42.17.4  nPaths=120  nHops=10  time=91.9196ms  ICMP=TIMEOUT
+67-2:0:4b "Martincoit Networks"   No path found from 64-2:0:9 to 67-2:0:4b
+67-2:0:57 "Mysten Labs"   ERROR: SCMP error:
+71-0:0:58 "Princeton University"   71-0:0:e1 "University of Virginia"     127.0.0.1  nPaths=4  nHops=7  time=154.7822ms  ICMP=0.2ms
+71-0:0:22f "SWITCH Education"     130.59.44.242  nPaths=8  nHops=6  time=7.0417ms  ICMP=TIMEOUT
+71-0:0:474 "SIDN Labs"     2a00:d78:0:713:5054:ff:fe53:bfc6  nPaths=8  nHops=6  time=25.1904ms  ICMP=TIMEOUT
+71-0:0:9f2 "NCSR Demokritos SCION AS"   No path found from 64-2:0:9 to 71-0:0:9f2
+71-0:0:103e "City University of Hong Kong (CityUHK)"   No path found from 64-2:0:9 to 71-0:0:103e
+71-0:0:51e5 "GEANT"     10.0.3.1  nPaths=4  nHops=4  time=5.9936ms  ICMP=TIMEOUT
+71-2:0:35 "BRIDGES"     10.205.1.1  nPaths=4  nHops=5  time=141.1758ms  ICMP=TIMEOUT
+71-2:0:3b "KREONET Seoul"   71-2:0:3c "KREONET Hong Kong"   ERROR: Error while getting Segment info: UNKNOWN: invalid request {dst=71-2:0:3c; reason=core segment request src ISD not local ISD; src=71-0}
+71-2:0:3d "KREONET Singapore"   71-2:0:3e "KREONET Amsterdam"     10.10.0.1  nPaths=8  nHops=5  time=20.9916ms  ICMP=TIMEOUT
+71-2:0:3f "KREONET Chicago"     10.10.0.1  nPaths=16  nHops=6  time=114.8527ms  ICMP=TIMEOUT
+71-2:0:40 "KREONET Seattle"   ERROR: Error while getting Segment info: UNKNOWN: invalid request {dst=71-2:0:40; reason=core segment request src ISD not local ISD; src=71-0}
+71-2:0:48 "Equinix"     127.0.0.1  nPaths=8  nHops=7  time=111.9329ms  ICMP=0.2ms
+71-2:0:49 "CybExer Technologies"     10.111.8.1  nPaths=8  nHops=6  time=60.1765ms  ICMP=TIMEOUT
+71-2:0:4a "Ovgu"     141.44.25.151  nPaths=4  nHops=6  time=22.7755ms  ICMP=23.2ms
+71-2:0:4d "KREONET Seoul"   No path found from 64-2:0:9 to 71-2:0:4d
+71-2:0:5c "Universidade Federal de Mato Grosso do Sul"     127.0.0.1  nPaths=8  nHops=6  time=150.1869ms  ICMP=0.3ms
+71-2:0:61 "National University of Singapore"   No path found from 64-2:0:9 to 71-2:0:61
+72-0:0:22f "SWITCH HVR"   ERROR: Error while getting Segment info: UNKNOWN: invalid request {dst=72-559; reason=core segment request src ISD not local ISD; src=72-0}
+72-0:0:ce7 "Swisscom HVR"   ERROR: Error while getting Segment info: UNKNOWN: invalid request {dst=72-3303; reason=core segment request src ISD not local ISD; src=72-0}
+72-0:0:1a4a "Sunrise HVR"   ERROR: Error while getting Segment info: UNKNOWN: invalid request {dst=72-6730; reason=core segment request src ISD not local ISD; src=72-0}
+72-0:0:3d07 "Cyberlink HVR"   No path found from 64-2:0:9 to 72-0:0:3d07
+72-2:0:13 "Anapaya Zurich"   No path found from 64-2:0:9 to 72-2:0:13
+72-2:0:2e "HIN Platform HVR - Glattbrugg"   No path found from 64-2:0:9 to 72-2:0:2e
+72-2:0:2f "HIN Platform HVR - Pratteln"   No path found from 64-2:0:9 to 72-2:0:2f
+72-2:0:33 "HIN HVR CA"   No path found from 64-2:0:9 to 72-2:0:33
+
+AS Stats:
+ all        = 111
+ success    = 66
+ no path    = 33
+ timeout    = 0
+ error      = 8
+ not listed = 1
+Path Stats:
+ all        = 8222
+ success    = 8218
+ timeout    = 3
+ICMP Stats:
+ all        = 66
+ success    = 8
+ timeout    = 58
+ error      = 0

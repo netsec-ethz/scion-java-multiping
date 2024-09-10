@@ -1,0 +1,8 @@
+{
+  "attemptRepeatCnt": 5,
+  "attemptDelayMs": 100,
+  "roundRepeatCnt": 144,
+  "roundDelaySec": 600,
+  "maxPathsPerDestination": 20,
+  "tryICMP": false
+}
