@@ -16,11 +16,8 @@ package org.scion.multiping;
 
 import org.scion.jpan.*;
 import org.scion.jpan.internal.PathRawParser;
-import org.scion.multiping.util.Config;
-import org.scion.multiping.util.ICMP;
-import org.scion.multiping.util.ParseAssignments;
+import org.scion.multiping.util.*;
 import org.scion.multiping.util.Record;
-import org.scion.multiping.util.Result;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -53,7 +50,6 @@ public class EchoAsync {
   private static final String FILE_INPUT = "EchoRepeatDestinations-short.csv";
   private static final String FILE_OUTPUT = "EchoRepeatOutput.csv";
 
-  private static final boolean PRINT = true;
   private final int localPort;
 
   private int nAsTried = 0;
@@ -88,6 +84,7 @@ public class EchoAsync {
   }
 
   public static void main(String[] args) throws IOException {
+    PRINT = true;
     System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
 
     config = Config.read(FILE_CONFIG);

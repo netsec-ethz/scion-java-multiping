@@ -69,7 +69,7 @@ public class ICMP {
 
         pinger.ping(target);
         while (pinger.isPendingWork()) {
-            sleep(500);
+            sleep(100);
         }
         pinger.stopSelector();
         if (seconds.get() >= 0) {

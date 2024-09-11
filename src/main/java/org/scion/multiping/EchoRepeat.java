@@ -24,11 +24,8 @@ import java.util.List;
 
 import org.scion.jpan.*;
 import org.scion.jpan.internal.PathRawParser;
-import org.scion.multiping.util.Config;
-import org.scion.multiping.util.ICMP;
-import org.scion.multiping.util.ParseAssignments;
+import org.scion.multiping.util.*;
 import org.scion.multiping.util.Record;
-import org.scion.multiping.util.Result;
 
 import static org.scion.multiping.util.Util.*;
 
@@ -54,7 +51,6 @@ public class EchoRepeat {
   private static final String FILE_INPUT = "EchoRepeatDestinations-short.csv";
   private static final String FILE_OUTPUT = "EchoRepeatOutput.csv";
 
-  private static final boolean PRINT = true;
   private final int localPort;
 
   private int nAsTried = 0;
@@ -91,6 +87,7 @@ public class EchoRepeat {
   }
 
   public static void main(String[] args) throws IOException {
+    PRINT = true;
     System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
 
     config = Config.read(FILE_CONFIG);
