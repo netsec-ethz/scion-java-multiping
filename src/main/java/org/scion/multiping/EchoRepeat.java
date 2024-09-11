@@ -12,13 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.scion.multiping.scmp;
-
-import com.google.common.util.concurrent.AtomicDouble;
-import com.google.gson.Gson;
-import com.zaxxer.ping.IcmpPinger;
-import com.zaxxer.ping.PingResponseHandler;
-import com.zaxxer.ping.PingTarget;
+package org.scion.multiping;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -27,9 +21,15 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import org.jetbrains.annotations.NotNull;
+
 import org.scion.jpan.*;
 import org.scion.jpan.internal.PathRawParser;
+import org.scion.multiping.util.Config;
+import org.scion.multiping.util.ICMP;
+import org.scion.multiping.util.ParseAssignments;
+import org.scion.multiping.util.Result;
+
+import static org.scion.multiping.util.Util.*;
 
 /**
  * This program takes a list of ISD/AS addresses and tries to measure latency to all of them. It
@@ -65,11 +65,6 @@ public class EchoRepeat {
   private int nPathTried = 0;
   private int nPathSuccess = 0;
   private int nPathTimeout = 0;
-
-  private int nIcmpTried = 0;
-  private int nIcmpSuccess = 0;
-  private int nIcmpError = 0;
-  private int nIcmpTimeout = 0;
 
   private static Config config;
   private static final List<Result> results = new ArrayList<>();
@@ -119,14 +114,14 @@ public class EchoRepeat {
     fileWriter.close();
 
     // max:
-    Result maxPing = results.stream().max((o1, o2) -> (int) (o1.pingMs - o2.pingMs)).get();
-    Result maxHops = results.stream().max((o1, o2) -> o1.nHops - o2.nHops).get();
-    Result maxPaths = results.stream().max((o1, o2) -> o1.nPaths - o2.nPaths).get();
+    Result maxPing = results.stream().max((o1, o2) -> (int) (o1.getPingMs() - o2.getPingMs())).get();
+    Result maxHops = results.stream().max((o1, o2) -> o1.getHopCount() - o2.getHopCount()).get();
+    Result maxPaths = results.stream().max((o1, o2) -> o1.getPathCount() - o2.getPathCount()).get();
 
     println("");
-    println("Max hops  = " + maxHops.nHops + ":    " + maxHops);
-    println("Max ping  = " + round(maxPing.pingMs, 2) + "ms:    " + maxPing);
-    println("Max paths = " + maxPaths.nPaths + ":    " + maxPaths);
+    println("Max hops  = " + maxHops.getHopCount() + ":    " + maxHops);
+    println("Max ping  = " + round(maxPing.getPingMs(), 2) + "ms:    " + maxPing);
+    println("Max paths = " + maxPaths.getPathCount() + ":    " + maxPaths);
 
     println("");
     println("AS Stats:");
@@ -140,10 +135,10 @@ public class EchoRepeat {
     println(" success    = " + demo.nPathSuccess);
     println(" timeout    = " + demo.nPathTimeout);
     println("ICMP Stats:");
-    println(" all        = " + demo.nIcmpTried);
-    println(" success    = " + demo.nIcmpSuccess);
-    println(" timeout    = " + demo.nIcmpTimeout);
-    println(" error      = " + demo.nIcmpError);
+    println(" all        = " + ICMP.nIcmpTried);
+    println(" success    = " + ICMP.nIcmpSuccess);
+    println(" timeout    = " + ICMP.nIcmpTimeout);
+    println(" error      = " + ICMP.nIcmpError);
   }
 
   private void runDemo(ParseAssignments.HostEntry remote) throws IOException {
@@ -162,7 +157,7 @@ public class EchoRepeat {
         String dst = ScionUtil.toStringIA(remote.getIsdAs());
         println("WARNING: No path found from " + src + " to " + dst);
         nAsNoPathFound++;
-        results.add(new Result(remote, ResultState.NO_PATH));
+        results.add(new Result(remote, Result.ResultState.NO_PATH));
         return;
       }
       nPaths = paths.size();
@@ -170,7 +165,7 @@ public class EchoRepeat {
     } catch (ScionRuntimeException e) {
       println("ERROR: " + e.getMessage());
       nAsError++;
-      results.add(new Result(remote, ResultState.ERROR));
+      results.add(new Result(remote, Result.ResultState.ERROR));
       return;
     }
     Result result = new Result(remote, msg, bestPath.get(), nPaths);
@@ -181,7 +176,7 @@ public class EchoRepeat {
     }
 
     // ICMP ping
-    String icmpMs = pingICMP(msg.getPath().getRemoteAddress());
+    String icmpMs = ICMP.pingICMP(msg.getPath().getRemoteAddress(), config);
     result.setICMP(icmpMs);
 
     // output
@@ -317,155 +312,6 @@ public class EchoRepeat {
     }
   }
 
-  private String pingICMP(InetAddress address) {
-    if (!config.tryICMP) {
-      return "OFF";
-    }
-    String ipStr = address.getHostAddress();
-    if (ipStr.startsWith("127.") || ipStr.startsWith("192.168.") || ipStr.startsWith("10.")) {
-      return "N/A";
-    }
-    if (ipStr.startsWith("172.")) {
-      String[] split = ipStr.split("\\.");
-      int part2 = Integer.parseInt(split[1]);
-      if (part2 >= 16 && part2 < 31) {
-        return "N/A";
-      }
-    }
-
-    AtomicDouble seconds = new AtomicDouble(-2);
-    PingResponseHandler handler =
-        new PingResponseHandler() {
-          @Override
-          public void onResponse(@NotNull PingTarget pingTarget, double v, int i, int i1) {
-            seconds.set(v);
-          }
-
-          @Override
-          public void onTimeout(@NotNull PingTarget pingTarget) {
-            seconds.set(-1);
-          }
-        };
-
-    IcmpPinger pinger = new IcmpPinger(handler);
-    PingTarget target = new PingTarget(address);
-    Thread t = new Thread(pinger::runSelector);
-    t.start();
-    nIcmpTried++;
-
-    pinger.ping(target);
-    while (pinger.isPendingWork()) {
-      sleep(500);
-    }
-    pinger.stopSelector();
-    if (seconds.get() >= 0) {
-      nIcmpSuccess++;
-      double ms = seconds.get() * 1000;
-      return round(ms, 2) + "ms"; // milliseconds
-    }
-    if (seconds.get() == -1) {
-      nIcmpTimeout++;
-      return "TIMEOUT";
-    }
-    nIcmpError++;
-    return "ERROR";
-  }
-
-  private static void sleep(long millis) {
-    try {
-      Thread.sleep(millis);
-    } catch (InterruptedException e) {
-      Thread.currentThread().interrupt();
-      throw new IllegalStateException(e);
-    }
-  }
-
-  private static void print(String msg) {
-    if (PRINT) {
-      System.out.print(msg);
-    }
-  }
-
-  private static void println(String msg) {
-    if (PRINT) {
-      System.out.println(msg);
-    }
-  }
-
-  private static double round(double d, int nDigits) {
-    double div = Math.pow(10, nDigits);
-    return Math.round(d * div) / div;
-  }
-
-  enum ResultState {
-    NOT_DONE,
-    DONE,
-    ERROR,
-    NO_PATH,
-    TIME_OUT,
-    LOCAL_AS
-  }
-
-  private static class Result {
-    private final long isdAs;
-    private final String name;
-    private int nHops;
-    private int nPaths;
-    private double pingMs;
-    private Path path;
-    private String remoteIP;
-    private String icmp;
-    private ResultState state = ResultState.NOT_DONE;
-
-    private Result(ParseAssignments.HostEntry e) {
-      this.isdAs = e.getIsdAs();
-      this.name = e.getName();
-    }
-
-    Result(ParseAssignments.HostEntry e, ResultState state) {
-      this(e);
-      this.state = state;
-    }
-
-    public Result(ParseAssignments.HostEntry e, Scmp.TimedMessage msg, Path request, int nPaths) {
-      this(e);
-      if (msg == null) {
-        state = ResultState.LOCAL_AS;
-        return;
-      }
-      this.nPaths = nPaths;
-      this.path = request;
-      nHops = PathRawParser.create(request.getRawPath()).getHopCount();
-      remoteIP = msg.getPath().getRemoteAddress().getHostAddress();
-      if (msg.isTimedOut()) {
-        state = ResultState.TIME_OUT;
-      } else {
-        pingMs = msg.getNanoSeconds() / (double) 1_000_000;
-        state = ResultState.DONE;
-      }
-    }
-
-    public long getIsdAs() {
-      return isdAs;
-    }
-
-    public String getName() {
-      return name;
-    }
-
-    public void setICMP(String icmp) {
-      this.icmp = icmp;
-    }
-
-    @Override
-    public String toString() {
-      String out = ScionUtil.toStringIA(isdAs) + " " + name;
-      out += "   " + ScionUtil.toStringPath(path.getMetadata());
-      out += "  " + remoteIP + "  nPaths=" + nPaths + "  nHops=" + nHops;
-      return out + "  time=" + round(pingMs, 2) + "ms" + "  ICMP=" + icmp;
-    }
-  }
-
   private static class Record {
     private final long isdAs;
     private final ArrayList<Attempt> attempts = new ArrayList<>();
@@ -488,7 +334,7 @@ public class EchoRepeat {
 
     public void registerAttempt(Scmp.TimedMessage msg) {
       Attempt a = new Attempt(msg);
-      if (remoteIP == null && a.state != ResultState.LOCAL_AS) {
+      if (remoteIP == null && a.state != Result.ResultState.LOCAL_AS) {
         remoteIP = msg.getPath().getRemoteAddress().getHostAddress();
       }
       attempts.add(a);
@@ -535,18 +381,18 @@ public class EchoRepeat {
 
   private static class Attempt {
     private double pingMs;
-    private ResultState state = ResultState.NOT_DONE;
+    private Result.ResultState state = Result.ResultState.NOT_DONE;
 
     Attempt(Scmp.TimedMessage msg) {
       if (msg == null) {
-        state = ResultState.LOCAL_AS;
+        state = Result.ResultState.LOCAL_AS;
         return;
       }
       if (msg.isTimedOut()) {
-        state = ResultState.TIME_OUT;
+        state = Result.ResultState.TIME_OUT;
       } else {
         pingMs = msg.getNanoSeconds() / (double) 1_000_000;
-        state = ResultState.DONE;
+        state = Result.ResultState.DONE;
       }
     }
 
@@ -556,61 +402,4 @@ public class EchoRepeat {
     }
   }
 
-  private static class Ref<T> {
-    public T t;
-
-    private Ref(T t) {
-      this.t = t;
-    }
-
-    public static <T> Ref<T> empty() {
-      return new Ref<>(null);
-    }
-
-    public static <T> Ref<T> of(T t) {
-      return new Ref<>(t);
-    }
-
-    public T get() {
-      return t;
-    }
-
-    public void set(T t) {
-      this.t = t;
-    }
-  }
-
-  private static class Config {
-    int attemptRepeatCnt = 5;
-    int attemptDelayMs = 100;
-    int roundRepeatCnt = 144; // 1 day
-    int roundDelaySec = 10 * 60; // 10 minutes
-    int maxPathsPerDestination = 20;
-    boolean tryICMP = false;
-
-    static Config read(String path) {
-      Gson gson = new Gson();
-
-      // Converts JSON file to Java object
-      try (Reader reader = new FileReader(path)) {
-        // Convert JSON File to Java Object
-        return gson.fromJson(reader, Config.class);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
-
-    void write(String path) {
-      Gson gson = new Gson();
-      //      // Converts Java object to JSON string
-      //      String json = gson.toJson(this);
-      //      System.out.println("JSON: " + json);
-
-      try (Writer writer = new FileWriter(path)) {
-        gson.toJson(this, writer);
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
-    }
-  }
 }

@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package org.scion.multiping.scmp;
+package org.scion.multiping.util;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
