@@ -1,3 +1,3 @@
-# SCION Java MutliPing
+# SCION Java MultiPing
 
-A tool that allows pinging all known ASes in one run.
+A tool that allows pinging / trace route) all known ASes in one run.
