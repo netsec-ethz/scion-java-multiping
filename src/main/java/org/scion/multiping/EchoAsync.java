@@ -19,6 +19,7 @@ import org.scion.jpan.internal.PathRawParser;
 import org.scion.multiping.util.Config;
 import org.scion.multiping.util.ICMP;
 import org.scion.multiping.util.ParseAssignments;
+import org.scion.multiping.util.Record;
 import org.scion.multiping.util.Result;
 
 import java.io.*;
@@ -67,7 +68,7 @@ public class EchoAsync {
 
   private static Config config;
   private static final List<Result> results = new ArrayList<>();
-  private static final List<Record> records = new ArrayList<>();
+  private static final List<org.scion.multiping.util.Record> records = new ArrayList<>();
   private static FileWriter fileWriter;
 
   private enum Policy {
@@ -111,9 +112,9 @@ public class EchoAsync {
     fileWriter.close();
 
     // max:
-    org.scion.multiping.util.Result maxPing = results.stream().max((o1, o2) -> (int) (o1.getPingMs() - o2.getPingMs())).get();
-    org.scion.multiping.util.Result maxHops = results.stream().max((o1, o2) -> o1.getHopCount() - o2.getHopCount()).get();
-    org.scion.multiping.util.Result maxPaths = results.stream().max((o1, o2) -> o1.getPathCount() - o2.getPathCount()).get();
+    Result maxPing = results.stream().max((o1, o2) -> (int) (o1.getPingMs() - o2.getPingMs())).get();
+    Result maxHops = results.stream().max((o1, o2) -> o1.getHopCount() - o2.getHopCount()).get();
+    Result maxPaths = results.stream().max((o1, o2) -> o1.getPathCount() - o2.getPathCount()).get();
 
     println("");
     println("Max hops  = " + maxHops.getHopCount() + ":    " + maxHops);
@@ -240,7 +241,8 @@ public class EchoAsync {
       for (int i = 0; i < paths.size() && i < config.maxPathsPerDestination; i++) {
         Path path = paths.get(i);
         nPathTried++;
-        Record rec = Record.startMeasurement(path);
+        org.scion.multiping.util.Record rec = org.scion.multiping.util.Record.startMeasurement(path);
+        records.add(rec);
         for (int attempt = 0; attempt < config.attemptRepeatCnt; attempt++) {
           Instant start = Instant.now();
           List<Scmp.TracerouteMessage> messages = scmpChannel.sendTracerouteRequest(path);
@@ -248,7 +250,7 @@ public class EchoAsync {
             println(" -> local AS, no timing available");
             nPathSuccess++;
             nAsSuccess++;
-            rec.finishMeasurement();
+            rec.finishMeasurement(fileWriter);
             return null;
           }
 
@@ -270,7 +272,7 @@ public class EchoAsync {
             sleep(config.attemptDelayMs - usedMillis);
           }
         }
-        rec.finishMeasurement();
+        rec.finishMeasurement(fileWriter);
       }
       return best;
     } catch (IOException e) {
@@ -286,7 +288,8 @@ public class EchoAsync {
       for (int i = 0; i < paths.size() && i < config.maxPathsPerDestination; i++) {
         Path path = paths.get(i);
         nPathTried++;
-        Record rec = Record.startMeasurement(path);
+        org.scion.multiping.util.Record rec = Record.startMeasurement(path);
+        records.add(rec);
         for (int attempt = 0; attempt < config.attemptRepeatCnt; attempt++) {
           Instant start = Instant.now();
           List<Scmp.TracerouteMessage> messages = scmpChannel.sendTracerouteRequest(path);
@@ -294,7 +297,7 @@ public class EchoAsync {
             println(" -> local AS, no timing available");
             nPathSuccess++;
             nAsSuccess++;
-            rec.finishMeasurement();
+            rec.finishMeasurement(fileWriter);
             return null;
           }
 
@@ -316,127 +319,13 @@ public class EchoAsync {
             sleep(config.attemptDelayMs - usedMillis);
           }
         }
-        rec.finishMeasurement();
+        rec.finishMeasurement(fileWriter);
       }
       return best;
     } catch (IOException e) {
       println("ERROR: " + e.getMessage());
       nAsError++;
       return null;
-    }
-  }
-
-  private static class Record {
-    private final long isdAs;
-    private final ArrayList<Attempt> attempts = new ArrayList<>();
-    private final Instant time;
-    private final Path path;
-    private String remoteIP;
-    private String icmp;
-
-    public Record(Instant time, Path request) {
-      this.isdAs = request.getRemoteIsdAs();
-      this.time = time;
-      this.path = request;
-    }
-
-    public static Record startMeasurement(Path path) {
-      Record r = new Record(Instant.now(), path);
-      records.add(r);
-      return r;
-    }
-
-    public void registerAttempt(Scmp.TimedMessage msg) {
-      Attempt a = new Attempt(msg);
-      if (remoteIP == null && a.state != Result.ResultState.LOCAL_AS) {
-        remoteIP = msg.getPath().getRemoteAddress().getHostAddress();
-      }
-      attempts.add(a);
-    }
-
-    public void finishMeasurement() {
-      int nHops = PathRawParser.create(path.getRawPath()).getHopCount();
-      StringBuilder out = new StringBuilder(ScionUtil.toStringIA(isdAs));
-      out.append(",").append(remoteIP);
-      out.append(",").append(time);
-      out.append(",").append(nHops);
-      out.append(",").append(ScionUtil.toStringPath(path.getRawPath()));
-      for (Attempt a : attempts) {
-        out.append(",").append(round(a.pingMs, 2));
-      }
-      out.append(System.lineSeparator());
-      try {
-        fileWriter.append(out.toString());
-        fileWriter.flush();
-      } catch (IOException e) {
-        throw new IllegalStateException(e);
-      }
-    }
-
-    public long getIsdAs() {
-      return isdAs;
-    }
-
-    public void setICMP(String icmp) {
-      this.icmp = icmp;
-    }
-
-    @Override
-    public String toString() {
-      StringBuilder out = new StringBuilder(ScionUtil.toStringIA(isdAs));
-      out.append("   ").append(ScionUtil.toStringPath(path.getMetadata()));
-      out.append("  ").append(remoteIP);
-      for (Attempt a : attempts) {
-        out.append(a);
-      }
-      return out + "  ICMP=" + icmp;
-    }
-  }
-
-  private static class Attempt {
-    private double pingMs;
-    private Result.ResultState state = Result.ResultState.NOT_DONE;
-
-    Attempt(Scmp.TimedMessage msg) {
-      if (msg == null) {
-        state = Result.ResultState.LOCAL_AS;
-        return;
-      }
-      if (msg.isTimedOut()) {
-        state = Result.ResultState.TIME_OUT;
-      } else {
-        pingMs = msg.getNanoSeconds() / (double) 1_000_000;
-        state = Result.ResultState.DONE;
-      }
-    }
-
-    @Override
-    public String toString() {
-      return "  time=" + round(pingMs, 2) + "ms";
-    }
-  }
-
-  private static class Ref<T> {
-    public T t;
-
-    private Ref(T t) {
-      this.t = t;
-    }
-
-    public static <T> Ref<T> empty() {
-      return new Ref<>(null);
-    }
-
-    public static <T> Ref<T> of(T t) {
-      return new Ref<>(t);
-    }
-
-    public T get() {
-      return t;
-    }
-
-    public void set(T t) {
-      this.t = t;
     }
   }
 }
