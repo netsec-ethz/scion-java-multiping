@@ -27,6 +27,7 @@ public class Config {
   public String isdAsFile;
   public String outputFile;
   public int localPort = 30041;
+  public boolean consoleOutput = true;
 
   public static Config read(String path) {
     Gson gson = new Gson();

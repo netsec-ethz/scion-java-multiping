@@ -51,7 +51,9 @@ The tool uses a configuration file `EchoRepeatConfig.json` that can contain the 
   "maxPathsPerDestination": 20,
   "tryICMP": false,
   "isdAsFile": "EchoRepeatDestinations-short.csv",
-  "outputFile": "EchoOutput.csv"
+  "outputFile": "EchoOutput.csv",
+  "localPort": 30041,
+  "consoleOutput": true
 }
 ```
 

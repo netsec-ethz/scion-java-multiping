@@ -63,10 +63,11 @@ public class EchoRepeat {
   }
 
   public static void main(String[] args) throws IOException {
-    PRINT = true;
     System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
 
     config = Config.read(FILE_CONFIG);
+    PRINT = config.consoleOutput;
+
     // Output: ISD/AS, remote IP, time, hopCount, path, [pings]
     fileWriter = new FileWriter(config.outputFile);
 
