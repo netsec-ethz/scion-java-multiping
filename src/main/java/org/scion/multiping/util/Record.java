@@ -87,7 +87,7 @@ public class Record {
     out.append(",").append(time);
     out.append(",").append(state.name());
     out.append(",").append(nHops);
-    out.append(",").append(path == null ? "[]" : ScionUtil.toStringPath(path.getRawPath()));
+    out.append(",").append(path == null ? "[]" : ScionUtil.toStringPath(path.getMetadata()));
     for (Attempt a : attempts) {
       out.append(",").append(round(a.pingMs, 2));
     }
