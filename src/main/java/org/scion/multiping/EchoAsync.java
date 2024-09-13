@@ -29,8 +29,8 @@ import org.scion.multiping.util.*;
 import org.scion.multiping.util.Record;
 
 /**
- * This program takes a list of ISD/AS addresses and tries to measure latency to each of them vi traceroute. It
- * can also attempt an ICMP ping for comparison.<br>
+ * This program takes a list of ISD/AS addresses and tries to measure latency to each of them vi
+ * traceroute. It can also attempt an ICMP ping for comparison.<br>
  * The list is imported from a file.
  *
  * <p>There are several options for executing measurements (see "Policy"):<br>
@@ -56,7 +56,6 @@ public class EchoAsync {
   private int nPingError = 0;
 
   private static Config config;
-  private static final List<Result> results = new ArrayList<>();
   private static final List<Record> records = new ArrayList<>();
   private static FileWriter fileWriter;
 
@@ -90,17 +89,6 @@ public class EchoAsync {
     }
     fileWriter.close();
 
-    // max:
-    Result maxPing =
-        results.stream().max((o1, o2) -> (int) (o1.getPingMs() - o2.getPingMs())).get();
-    Result maxHops = results.stream().max((o1, o2) -> o1.getHopCount() - o2.getHopCount()).get();
-    Result maxPaths = results.stream().max((o1, o2) -> o1.getPathCount() - o2.getPathCount()).get();
-
-    println("");
-    println("Max hops  = " + maxHops.getHopCount() + ":    " + maxHops);
-    println("Max ping  = " + round(maxPing.getPingMs(), 2) + "ms:    " + maxPing);
-    println("Max paths = " + maxPaths.getPathCount() + ":    " + maxPaths);
-
     println("");
     println("Ping Stats:");
     println(" all        = " + demo.nPingTried);
@@ -120,48 +108,44 @@ public class EchoAsync {
     InetSocketAddress destinationAddress =
         new InetSocketAddress(InetAddress.getByAddress(new byte[] {1, 2, 3, 4}), 12345);
     int nPaths;
-    Scmp.TimedMessage msg;
-    Ref<Path> bestPath = Ref.empty();
+    Record rec;
+    Ref<Record.Attempt> bestAttempt = Ref.empty();
     try {
       List<Path> paths = service.getPaths(remote.getIsdAs(), destinationAddress);
       if (paths.isEmpty()) {
         String src = ScionUtil.toStringIA(service.getLocalIsdAs());
         String dst = ScionUtil.toStringIA(remote.getIsdAs());
         println("WARNING: No path found from " + src + " to " + dst);
-        results.add(new Result(remote, Result.State.NO_PATH));
+        records.add(Record.createNoPathRecord(remote.getIsdAs(), fileWriter));
         return;
       }
       nPaths = paths.size();
-      msg = measureLatency(paths, bestPath);
+      rec = measureLatency(paths, bestAttempt);
     } catch (ScionRuntimeException e) {
       println("ERROR: " + e.getMessage());
-      results.add(new Result(remote, Result.State.ERROR));
+      records.add(Record.createErrorRecord(remote.getIsdAs(), fileWriter));
       return;
     }
-    Result result = new Result(remote, msg, bestPath.get(), nPaths);
-    results.add(result);
 
-    if (msg == null) {
+    if (rec == null) {
       return;
     }
 
     // ICMP ping
-    String icmpMs = ICMP.pingICMP(msg.getPath().getRemoteAddress(), config);
-    result.setICMP(icmpMs);
+    String icmpMs = ICMP.pingICMP(rec.getPath().getRemoteAddress(), config);
+    rec.setICMP(icmpMs);
 
     // output
-    double millis = round(msg.getNanoSeconds() / (double) 1_000_000, 2);
-    int nHops = PathRawParser.create(msg.getPath().getRawPath()).getHopCount();
-    String addr = msg.getPath().getRemoteAddress().getHostAddress();
-    String out = addr + "  nPaths=" + nPaths + "  nHops=" + nHops;
-    out += "  time=" + millis + "ms" + "  ICMP=" + icmpMs;
+    int nHops = PathRawParser.create(rec.getPath().getRawPath()).getHopCount();
+    String out = rec.getRemoteIP() + "  nPaths=" + nPaths + "  nHops=" + nHops;
+    out += "  time=" + bestAttempt.get().getPingMs() + "ms" + "  ICMP=" + icmpMs;
     if (SHOW_PATH) {
-      out += "  " + ScionUtil.toStringPath(bestPath.get().getMetadata());
+      out += "  " + ScionUtil.toStringPath(rec.getPath().getMetadata());
     }
     println(out);
   }
 
-  private Scmp.TracerouteMessage measureLatency(List<Path> paths, Ref<Path> refBest) {
+  private Record measureLatency(List<Path> paths, Ref<Record.Attempt> refBest) {
     Queue<Scmp.TracerouteMessage> messages = new ConcurrentLinkedQueue<>();
     Queue<Scmp.ErrorMessage> errors = new ConcurrentLinkedQueue<>();
 
@@ -192,20 +176,22 @@ public class EchoAsync {
       records.add(rec);
       if (path.getRawPath().length == 0) {
         println(" -> local AS, no timing available");
+        rec.setState(Record.State.LOCAL_AS);
         rec.finishMeasurement(fileWriter);
         return null;
       }
       recordList.add(rec);
     }
 
-    Scmp.TracerouteMessage best = null;
+    Record best = null;
+    double currentBestMs = Double.MAX_VALUE;
     try (ScmpSender scmpChannel = Scmp.createSender(handler, localPort)) {
-      for (int attempt = 0; attempt < config.attemptRepeatCnt; attempt++) {
+      for (int attemptCount = 0; attemptCount < config.attemptRepeatCnt; attemptCount++) {
         Instant start = Instant.now();
         Map<Integer, Record> seqToPathMap = new HashMap<>();
 
         // Send
-        for (Record rec: recordList) {
+        for (Record rec : recordList) {
           nPingTried++;
           int sequenceID = scmpChannel.asyncTracerouteLast(rec.getPath());
           if (sequenceID < 0) {
@@ -223,17 +209,17 @@ public class EchoAsync {
         while (!messages.isEmpty()) {
           Scmp.TracerouteMessage msg = messages.remove();
           Record rec = seqToPathMap.get(msg.getSequenceNumber());
-          rec.registerAttempt(msg);
+          Record.Attempt attempt = rec.registerAttempt(msg);
           if (msg.isTimedOut()) {
             nPingTimeout++;
           } else {
             nPingSuccess++;
           }
 
-          if (best == null || msg.getNanoSeconds() < best.getNanoSeconds()) {
-            best = msg;
-            // In theory the request path should be the same as the response path.
-            refBest.set(msg.getRequest().getPath());
+          if (best == null || attempt.getPingMs() < currentBestMs) {
+            currentBestMs = attempt.getPingMs();
+            refBest.set(attempt);
+            best = rec;
           }
         }
 
@@ -251,7 +237,7 @@ public class EchoAsync {
         }
       }
 
-      for (Record rec: recordList) {
+      for (Record rec : recordList) {
         rec.finishMeasurement(fileWriter);
       }
 

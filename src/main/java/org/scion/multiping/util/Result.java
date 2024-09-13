@@ -20,22 +20,13 @@ import org.scion.jpan.Scmp;
 import org.scion.jpan.internal.PathRawParser;
 
 public class Result {
-  /**
-   * IMPORTANT: States are ordered by precedence!
-   * Lower-ordinal states override higher-ordinal states.
-   * For example, an attempt with NOT_DONE means that the whole record is NOT_DONE.
-   * The ordering doesn't make sense for every possible combination, but it is important that NOT_DONE overrides
-   * everything else and that SUCCESS is overridden by everything else.
-   *
-   * TODO maybe we should refine this. Some states are clearly per path, others are per attempt.
-   */
   public enum State {
     NOT_DONE,
+    SUCCESS,
     ERROR,
     NO_PATH,
     TIMEOUT,
-    LOCAL_AS,
-    SUCCESS,
+    LOCAL_AS
   }
 
   private final long isdAs;
