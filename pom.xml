@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.scion</groupId>
-    <artifactId>jpan-examples</artifactId>
+    <artifactId>scion-multiping</artifactId>
     <version>0.0.1-ALPHA-SNAPSHOT</version>
 
     <properties>
@@ -52,16 +52,16 @@
     </developers>
 
     <scm>
-        <url>https://github.com/tzaeschke/scion-java-playground</url>
-        <connection>scm:git:git@github.com:tzaeschke/scion-java-playground.git</connection>
-        <developerConnection>scm:git:git@github.com:tzaeschke/scion-java-playground.git
+        <url>https://github.com/netsec-ethz/scion-java-multiping</url>
+        <connection>scm:git:git@github.com:netsec-ethz/scion-java-multiping.git</connection>
+        <developerConnection>scm:git:git@github.com:netsec-ethz/scion-java-multiping.git
         </developerConnection>
         <tag>HEAD</tag>
     </scm>
 
     <issueManagement>
         <system>github</system>
-        <url>https://github.com/tzaeschke/scion-java-playground/issues</url>
+        <url>https://github.com/netsec-ethz/scion-java-multiping/issues</url>
     </issueManagement>
 
     <!-- mvn versions:display-dependency-updates -->
