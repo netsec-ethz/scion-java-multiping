@@ -155,7 +155,7 @@ public class EchoRepeat {
         String dst = ScionUtil.toStringIA(remote.getIsdAs());
         println("WARNING: No path found from " + src + " to " + dst);
         nAsNoPathFound++;
-        results.add(new Result(remote, Result.ResultState.NO_PATH));
+        results.add(new Result(remote, Result.State.NO_PATH));
         return;
       }
       nPaths = paths.size();
@@ -163,7 +163,7 @@ public class EchoRepeat {
     } catch (ScionRuntimeException e) {
       println("ERROR: " + e.getMessage());
       nAsError++;
-      results.add(new Result(remote, Result.ResultState.ERROR));
+      results.add(new Result(remote, Result.State.ERROR));
       return;
     }
     Result result = new Result(remote, msg, bestPath.get(), nPaths);

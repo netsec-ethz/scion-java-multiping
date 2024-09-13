@@ -29,11 +29,9 @@ import org.scion.multiping.util.*;
 import org.scion.multiping.util.Record;
 
 /**
- * This program takes a list of ISD/AS addresses and tries to measure latency to all of them. It
- * will also attempt an ICMP ping for comparison.<br>
- * The list is derived from <a
- * href="https://docs.anapaya.net/en/latest/resources/isd-as-assignments/">here</a> and is locally
- * stored in ISD-AS-Assignments.csv, see {@link ParseAssignments}.java.
+ * This program takes a list of ISD/AS addresses and tries to measure latency to each of them vi traceroute. It
+ * can also attempt an ICMP ping for comparison.<br>
+ * The list is imported from a file.
  *
  * <p>There are several options for executing measurements (see "Policy"):<br>
  * - SCMP traceroute vs SCMP echo<br>
@@ -52,31 +50,16 @@ public class EchoAsync {
 
   private final int localPort;
 
-  private int nAsTried = 0;
-  private int nAsSuccess = 0;
-  private int nAsError = 0;
-  private int nAsTimeout = 0;
-  private int nAsNoPathFound = 0;
-
-  private int nPathTried = 0;
-  private int nPathSuccess = 0;
-  private int nPathTimeout = 0;
+  private int nPingTried = 0;
+  private int nPingSuccess = 0;
+  private int nPingTimeout = 0;
+  private int nPingError = 0;
 
   private static Config config;
   private static final List<Result> results = new ArrayList<>();
   private static final List<Record> records = new ArrayList<>();
   private static FileWriter fileWriter;
 
-  private enum Policy {
-    /** Fastest path using SCMP traceroute */
-    FASTEST_TR,
-    /** Shortest path using SCMP traceroute */
-    SHORTEST_TR,
-    /** Fastest path using SCMP traceroute, but skip on-route echos */
-    FASTEST_TR_LAST,
-  }
-
-  private static final Policy POLICY = Policy.FASTEST_TR;
   private static final boolean SHOW_PATH = true;
 
   public EchoAsync(int localPort) {
@@ -94,12 +77,11 @@ public class EchoAsync {
     // Local port must be 30041 for networks that expect a dispatcher
     EchoAsync demo = new EchoAsync(30041);
     List<ParseAssignments.HostEntry> list = ParseAssignments.getList(FILE_INPUT);
-    // List<ParseAssignments.HostEntry> list = DownloadAssignments.getList();
     for (int i = 0; i < config.roundRepeatCnt; i++) {
       Instant start = Instant.now();
       for (ParseAssignments.HostEntry e : list) {
         print(ScionUtil.toStringIA(e.getIsdAs()) + " " + e.getName() + "  ");
-        demo.runDemo(e);
+        demo.runRepeat(e);
       }
       long usedMillis = Instant.now().toEpochMilli() - start.toEpochMilli();
       if (usedMillis < config.roundDelaySec * 1000L) {
@@ -120,16 +102,11 @@ public class EchoAsync {
     println("Max paths = " + maxPaths.getPathCount() + ":    " + maxPaths);
 
     println("");
-    println("AS Stats:");
-    println(" all        = " + demo.nAsTried);
-    println(" success    = " + demo.nAsSuccess);
-    println(" no path    = " + demo.nAsNoPathFound);
-    println(" timeout    = " + demo.nAsTimeout);
-    println(" error      = " + demo.nAsError);
-    println("Path Stats:");
-    println(" all        = " + demo.nPathTried);
-    println(" success    = " + demo.nPathSuccess);
-    println(" timeout    = " + demo.nPathTimeout);
+    println("Ping Stats:");
+    println(" all        = " + demo.nPingTried);
+    println(" success    = " + demo.nPingSuccess);
+    println(" timeout    = " + demo.nPingTimeout);
+    println(" error      = " + demo.nPingError);
     println("ICMP Stats:");
     println(" all        = " + ICMP.nIcmpTried);
     println(" success    = " + ICMP.nIcmpSuccess);
@@ -137,8 +114,7 @@ public class EchoAsync {
     println(" error      = " + ICMP.nIcmpError);
   }
 
-  private void runDemo(ParseAssignments.HostEntry remote) throws IOException {
-    nAsTried++;
+  private void runRepeat(ParseAssignments.HostEntry remote) throws IOException {
     ScionService service = Scion.defaultService();
     // Dummy address. The traceroute will contact the control service IP instead.
     InetSocketAddress destinationAddress =
@@ -152,16 +128,14 @@ public class EchoAsync {
         String src = ScionUtil.toStringIA(service.getLocalIsdAs());
         String dst = ScionUtil.toStringIA(remote.getIsdAs());
         println("WARNING: No path found from " + src + " to " + dst);
-        nAsNoPathFound++;
-        results.add(new Result(remote, Result.ResultState.NO_PATH));
+        results.add(new Result(remote, Result.State.NO_PATH));
         return;
       }
       nPaths = paths.size();
-      msg = findPaths(paths, bestPath);
+      msg = measureLatency(paths, bestPath);
     } catch (ScionRuntimeException e) {
       println("ERROR: " + e.getMessage());
-      nAsError++;
-      results.add(new Result(remote, Result.ResultState.ERROR));
+      results.add(new Result(remote, Result.State.ERROR));
       return;
     }
     Result result = new Result(remote, msg, bestPath.get(), nPaths);
@@ -185,55 +159,9 @@ public class EchoAsync {
       out += "  " + ScionUtil.toStringPath(bestPath.get().getMetadata());
     }
     println(out);
-    if (msg.isTimedOut()) {
-      nAsTimeout++;
-    } else {
-      nAsSuccess++;
-    }
   }
 
-  private Scmp.TimedMessage findPaths(List<Path> paths, Ref<Path> bestOut) {
-    switch (POLICY) {
-      case FASTEST_TR:
-        return findFastestTR(paths, bestOut);
-      case SHORTEST_TR:
-        return findShortestTR(paths, bestOut);
-      case FASTEST_TR_LAST:
-        return findFastestTR_Last(paths, bestOut);
-      default:
-        throw new UnsupportedOperationException();
-    }
-  }
-
-  private Scmp.TracerouteMessage findShortestTR(List<Path> paths, Ref<Path> refBest) {
-    Path path = PathPolicy.MIN_HOPS.filter(paths);
-    refBest.set(path);
-    try (ScmpChannel2 scmpChannel = Scmp.createAsyncChannel(localPort)) {
-      nPathTried++;
-      List<Scmp.TracerouteMessage> messages = scmpChannel.sendTracerouteRequest(path);
-      if (messages.isEmpty()) {
-        println(" -> local AS, no timing available");
-        nPathSuccess++;
-        nAsSuccess++;
-        return null;
-      }
-
-      Scmp.TracerouteMessage msg = messages.get(messages.size() - 1);
-      if (msg.isTimedOut()) {
-        nPathTimeout++;
-        return msg;
-      }
-
-      nPathSuccess++;
-      return msg;
-    } catch (IOException e) {
-      println("ERROR: " + e.getMessage());
-      nAsError++;
-      return null;
-    }
-  }
-
-  private Scmp.TracerouteMessage findFastestTR(List<Path> paths, Ref<Path> refBest) {
+  private Scmp.TracerouteMessage measureLatency(List<Path> paths, Ref<Path> refBest) {
     Queue<Scmp.TracerouteMessage> messages = new ConcurrentLinkedQueue<>();
     Queue<Scmp.ErrorMessage> errors = new ConcurrentLinkedQueue<>();
 
@@ -255,31 +183,35 @@ public class EchoAsync {
           }
         };
 
-    Map<Integer, Record> recordMap = new HashMap<>();
+    // Create list of required paths/records
+    int maxPath = Math.min(paths.size(), config.maxPathsPerDestination);
+    List<Record> recordList = new ArrayList<>();
+    for (int pathId = 0; pathId < maxPath; pathId++) {
+      Path path = paths.get(pathId);
+      Record rec = Record.startMeasurement(path);
+      records.add(rec);
+      if (path.getRawPath().length == 0) {
+        println(" -> local AS, no timing available");
+        rec.finishMeasurement(fileWriter);
+        return null;
+      }
+      recordList.add(rec);
+    }
+
     Scmp.TracerouteMessage best = null;
     try (ScmpSender scmpChannel = Scmp.createSender(handler, localPort)) {
       for (int attempt = 0; attempt < config.attemptRepeatCnt; attempt++) {
         Instant start = Instant.now();
-
-        int maxPath = Math.min(paths.size(), config.maxPathsPerDestination);
+        Map<Integer, Record> seqToPathMap = new HashMap<>();
 
         // Send
-        for (int i = 0; i < maxPath; i++) {
-          Path path = paths.get(i);
-          nPathTried++;
-          Record rec = Record.startMeasurement(path);
-          records.add(rec);
-          int sequenceID = scmpChannel.asyncTracerouteLast(path);
-
+        for (Record rec: recordList) {
+          nPingTried++;
+          int sequenceID = scmpChannel.asyncTracerouteLast(rec.getPath());
           if (sequenceID < 0) {
-            println(" -> local AS, no timing available");
-            nPathSuccess++;
-            nAsSuccess++;
-            rec.finishMeasurement(fileWriter);
-            return null;
+            throw new IllegalStateException();
           }
-
-          recordMap.put(sequenceID, rec);
+          seqToPathMap.put(sequenceID, rec);
         }
 
         // Wait
@@ -290,86 +222,43 @@ public class EchoAsync {
         // Receive
         while (!messages.isEmpty()) {
           Scmp.TracerouteMessage msg = messages.remove();
-          Record rec = recordMap.get(msg.getSequenceNumber());
+          Record rec = seqToPathMap.get(msg.getSequenceNumber());
           rec.registerAttempt(msg);
           if (msg.isTimedOut()) {
-            nPathTimeout++;
-            return msg;
+            nPingTimeout++;
+          } else {
+            nPingSuccess++;
           }
-
-          nPathSuccess++;
 
           if (best == null || msg.getNanoSeconds() < best.getNanoSeconds()) {
             best = msg;
             // In theory the request path should be the same as the response path.
             refBest.set(msg.getRequest().getPath());
           }
-          rec.finishMeasurement(fileWriter);
         }
 
         // TODO errors
         while (!errors.isEmpty()) {
+          nPingError++;
           errors.remove(); // TODO use it
         }
 
-        recordMap.clear();
+        seqToPathMap.clear();
 
         long usedMillis = Instant.now().toEpochMilli() - start.toEpochMilli();
         if (usedMillis < config.attemptDelayMs) {
           sleep(config.attemptDelayMs - usedMillis);
         }
       }
-      return best;
-    } catch (IOException e) {
-      println("ERROR: " + e.getMessage());
-      nAsError++;
-      return null;
-    }
-  }
 
-  private Scmp.TracerouteMessage findFastestTR_Last(List<Path> paths, Ref<Path> refBest) {
-    Scmp.TracerouteMessage best = null;
-    try (ScmpChannel2 scmpChannel = Scmp.createAsyncChannel(localPort)) {
-      for (int i = 0; i < paths.size() && i < config.maxPathsPerDestination; i++) {
-        Path path = paths.get(i);
-        nPathTried++;
-        Record rec = Record.startMeasurement(path);
-        records.add(rec);
-        for (int attempt = 0; attempt < config.attemptRepeatCnt; attempt++) {
-          Instant start = Instant.now();
-          List<Scmp.TracerouteMessage> messages = scmpChannel.sendTracerouteRequest(path);
-          if (messages.isEmpty()) {
-            println(" -> local AS, no timing available");
-            nPathSuccess++;
-            nAsSuccess++;
-            rec.finishMeasurement(fileWriter);
-            return null;
-          }
-
-          Scmp.TracerouteMessage msg = messages.get(messages.size() - 1);
-          rec.registerAttempt(msg);
-          if (msg.isTimedOut()) {
-            nPathTimeout++;
-            return msg;
-          }
-
-          nPathSuccess++;
-
-          if (best == null || msg.getNanoSeconds() < best.getNanoSeconds()) {
-            best = msg;
-            refBest.set(path);
-          }
-          long usedMillis = Instant.now().toEpochMilli() - start.toEpochMilli();
-          if (usedMillis < config.attemptDelayMs) {
-            sleep(config.attemptDelayMs - usedMillis);
-          }
-        }
+      for (Record rec: recordList) {
         rec.finishMeasurement(fileWriter);
       }
+
       return best;
     } catch (IOException e) {
       println("ERROR: " + e.getMessage());
-      nAsError++;
+      nPingError++;
       return null;
     }
   }

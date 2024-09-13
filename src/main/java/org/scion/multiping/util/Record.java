@@ -45,7 +45,7 @@ public class Record {
 
   public void registerAttempt(Scmp.TimedMessage msg) {
     Attempt a = new Attempt(msg);
-    if (remoteIP == null && a.state != Result.ResultState.LOCAL_AS) {
+    if (remoteIP == null && a.state != Result.State.LOCAL_AS) {
       remoteIP = msg.getPath().getRemoteAddress().getHostAddress();
     }
     attempts.add(a);
@@ -56,6 +56,7 @@ public class Record {
     StringBuilder out = new StringBuilder(ScionUtil.toStringIA(isdAs));
     out.append(",").append(remoteIP);
     out.append(",").append(time);
+    out.append(",").append(summarizeState());
     out.append(",").append(nHops);
     out.append(",").append(ScionUtil.toStringPath(path.getRawPath()));
     for (Attempt a : attempts) {
@@ -70,12 +71,24 @@ public class Record {
     }
   }
 
+  private Result.State summarizeState() {
+    Result.State state = Result.State.SUCCESS;
+    for (Attempt a : attempts) {
+      state = state.values()[Math.min(state.ordinal(), a.state.ordinal())];
+    }
+    return state;
+  }
+
   public long getIsdAs() {
     return isdAs;
   }
 
   public void setICMP(String icmp) {
     this.icmp = icmp;
+  }
+
+  public Path getPath() {
+    return path;
   }
 
   @Override
@@ -91,18 +104,18 @@ public class Record {
 
   private static class Attempt {
     private double pingMs;
-    private Result.ResultState state = Result.ResultState.NOT_DONE;
+    private Result.State state = Result.State.NOT_DONE;
 
     Attempt(Scmp.TimedMessage msg) {
       if (msg == null) {
-        state = Result.ResultState.LOCAL_AS;
+        state = Result.State.LOCAL_AS;
         return;
       }
       if (msg.isTimedOut()) {
-        state = Result.ResultState.TIME_OUT;
+        state = Result.State.TIMEOUT;
       } else {
         pingMs = msg.getNanoSeconds() / (double) 1_000_000;
-        state = Result.ResultState.DONE;
+        state = Result.State.SUCCESS;
       }
     }
 

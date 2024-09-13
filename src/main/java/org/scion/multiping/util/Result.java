@@ -20,13 +20,22 @@ import org.scion.jpan.Scmp;
 import org.scion.jpan.internal.PathRawParser;
 
 public class Result {
-  public enum ResultState {
+  /**
+   * IMPORTANT: States are ordered by precedence!
+   * Lower-ordinal states override higher-ordinal states.
+   * For example, an attempt with NOT_DONE means that the whole record is NOT_DONE.
+   * The ordering doesn't make sense for every possible combination, but it is important that NOT_DONE overrides
+   * everything else and that SUCCESS is overridden by everything else.
+   *
+   * TODO maybe we should refine this. Some states are clearly per path, others are per attempt.
+   */
+  public enum State {
     NOT_DONE,
-    DONE,
     ERROR,
     NO_PATH,
-    TIME_OUT,
-    LOCAL_AS
+    TIMEOUT,
+    LOCAL_AS,
+    SUCCESS,
   }
 
   private final long isdAs;
@@ -37,14 +46,14 @@ public class Result {
   private Path path;
   private String remoteIP;
   private String icmp;
-  private ResultState state = ResultState.NOT_DONE;
+  private State state = State.NOT_DONE;
 
   private Result(ParseAssignments.HostEntry e) {
     this.isdAs = e.getIsdAs();
     this.name = e.getName();
   }
 
-  public Result(ParseAssignments.HostEntry e, ResultState state) {
+  public Result(ParseAssignments.HostEntry e, State state) {
     this(e);
     this.state = state;
   }
@@ -52,7 +61,7 @@ public class Result {
   public Result(ParseAssignments.HostEntry e, Scmp.TimedMessage msg, Path request, int nPaths) {
     this(e);
     if (msg == null) {
-      state = ResultState.LOCAL_AS;
+      state = State.LOCAL_AS;
       return;
     }
     this.nPaths = nPaths;
@@ -60,10 +69,10 @@ public class Result {
     nHops = PathRawParser.create(request.getRawPath()).getHopCount();
     remoteIP = msg.getPath().getRemoteAddress().getHostAddress();
     if (msg.isTimedOut()) {
-      state = ResultState.TIME_OUT;
+      state = State.TIMEOUT;
     } else {
       pingMs = msg.getNanoSeconds() / (double) 1_000_000;
-      state = ResultState.DONE;
+      state = State.SUCCESS;
     }
   }
 
