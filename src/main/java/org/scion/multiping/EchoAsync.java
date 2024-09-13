@@ -56,7 +56,6 @@ public class EchoAsync {
   private int nPingError = 0;
 
   private static Config config;
-  private static final List<Record> records = new ArrayList<>();
   private static FileWriter fileWriter;
 
   private static final boolean SHOW_PATH = true;
@@ -116,14 +115,14 @@ public class EchoAsync {
         String src = ScionUtil.toStringIA(service.getLocalIsdAs());
         String dst = ScionUtil.toStringIA(remote.getIsdAs());
         println("WARNING: No path found from " + src + " to " + dst);
-        records.add(Record.createNoPathRecord(remote.getIsdAs(), fileWriter));
+        Record.createNoPathRecord(remote.getIsdAs(), fileWriter);
         return;
       }
       nPaths = paths.size();
       rec = measureLatency(paths, bestAttempt);
     } catch (ScionRuntimeException e) {
       println("ERROR: " + e.getMessage());
-      records.add(Record.createErrorRecord(remote.getIsdAs(), fileWriter));
+      Record.createErrorRecord(remote.getIsdAs(), fileWriter);
       return;
     }
 
@@ -173,7 +172,6 @@ public class EchoAsync {
     for (int pathId = 0; pathId < maxPath; pathId++) {
       Path path = paths.get(pathId);
       Record rec = Record.startMeasurement(path);
-      records.add(rec);
       if (path.getRawPath().length == 0) {
         println(" -> local AS, no timing available");
         rec.setState(Record.State.LOCAL_AS);
