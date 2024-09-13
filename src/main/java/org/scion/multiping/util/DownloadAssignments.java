@@ -14,14 +14,13 @@
 
 package org.scion.multiping.util;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.scion.jpan.ScionUtil;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class DownloadAssignments {
   private static final String HTTPS_URL =

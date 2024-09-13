@@ -14,15 +14,14 @@
 
 package org.scion.multiping;
 
-import org.scion.jpan.*;
-import org.scion.multiping.util.DownloadAssignments;
-import org.scion.multiping.util.ParseAssignments;
-import org.scion.multiping.util.Util;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
+import org.scion.jpan.*;
+import org.scion.multiping.util.DownloadAssignments;
+import org.scion.multiping.util.ParseAssignments;
+import org.scion.multiping.util.Util;
 
 /**
  * This program takes a list of ISD/AS addresses and tries to measure latency to all of them. It
@@ -53,7 +52,6 @@ public class DownloadAssignmentList {
       for (ParseAssignments.HostEntry e : list) {
         Util.println(ScionUtil.toStringIA(e.getIsdAs()) + " \"" + e.getName() + "\"  ");
         pw.println(ScionUtil.toStringIA(e.getIsdAs()) + ",\"" + e.getName() + "\"");
-
       }
     }
     Util.println(list.size() + " ISD/AS assignments written to " + csvOutputFile);

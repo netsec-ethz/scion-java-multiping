@@ -14,6 +14,8 @@
 
 package org.scion.multiping;
 
+import static org.scion.multiping.util.Util.*;
+
 import java.io.*;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -21,13 +23,10 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.scion.jpan.*;
 import org.scion.jpan.internal.PathRawParser;
 import org.scion.multiping.util.*;
 import org.scion.multiping.util.Record;
-
-import static org.scion.multiping.util.Util.*;
 
 /**
  * This program takes a list of ISD/AS addresses and tries to measure latency to all of them. It
@@ -112,7 +111,8 @@ public class EchoRepeat {
     fileWriter.close();
 
     // max:
-    Result maxPing = results.stream().max((o1, o2) -> (int) (o1.getPingMs() - o2.getPingMs())).get();
+    Result maxPing =
+        results.stream().max((o1, o2) -> (int) (o1.getPingMs() - o2.getPingMs())).get();
     Result maxHops = results.stream().max((o1, o2) -> o1.getHopCount() - o2.getHopCount()).get();
     Result maxPaths = results.stream().max((o1, o2) -> o1.getPathCount() - o2.getPathCount()).get();
 

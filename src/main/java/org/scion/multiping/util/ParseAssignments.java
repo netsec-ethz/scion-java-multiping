@@ -14,17 +14,16 @@
 
 package org.scion.multiping.util;
 
-import org.scion.jpan.ScionRuntimeException;
-import org.scion.jpan.ScionUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Stream;
+import org.scion.jpan.ScionRuntimeException;
+import org.scion.jpan.ScionUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ParseAssignments {
   private static final Logger LOG = LoggerFactory.getLogger(ParseAssignments.class);
