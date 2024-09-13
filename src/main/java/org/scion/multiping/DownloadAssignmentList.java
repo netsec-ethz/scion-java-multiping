@@ -45,7 +45,7 @@ public class DownloadAssignmentList {
 
   public static void main(String[] args) throws IOException {
     Util.PRINT = true;
-    String fileName = args.length > 0 ? args[0] : "EchoRepeatDestination-new.csv";
+    String fileName = args.length > 0 ? args[0] : "EchoRepeatDestinations-new.csv";
     File csvOutputFile = new File(fileName);
     List<ParseAssignments.HostEntry> list = DownloadAssignments.getList();
     try (PrintWriter pw = new PrintWriter(csvOutputFile)) {

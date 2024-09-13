@@ -4,5 +4,7 @@
   "roundRepeatCnt": 144,
   "roundDelaySec": 600,
   "maxPathsPerDestination": 20,
-  "tryICMP": false
+  "tryICMP": false,
+  "isdAsFile": "EchoRepeatDestinations-short.csv",
+  "outputFile": "EchoRepeatOutput.csv"
 }

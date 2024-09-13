@@ -24,13 +24,13 @@ public class Config {
   public int roundDelaySec = 10 * 60; // 10 minutes
   public int maxPathsPerDestination = 20;
   public boolean tryICMP = false;
+  public String isdAsFile;
+  public String outputFile;
+  public int localPort = 30041;
 
   public static Config read(String path) {
     Gson gson = new Gson();
-
-    // Converts JSON file to Java object
     try (Reader reader = new FileReader(path)) {
-      // Convert JSON File to Java Object
       return gson.fromJson(reader, Config.class);
     } catch (IOException e) {
       throw new RuntimeException(e);
