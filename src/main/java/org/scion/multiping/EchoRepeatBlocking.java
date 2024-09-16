@@ -87,7 +87,7 @@ public class EchoRepeatBlocking {
 
   public static void main(String[] args) throws IOException {
     PRINT = true;
-    System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
+    // System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
 
     config = Config.read(FILE_CONFIG);
     // Output: ISD/AS, remote IP, time, hopCount, path, [pings]
