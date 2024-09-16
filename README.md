@@ -57,6 +57,22 @@ The tool uses a configuration file `EchoRepeatConfig.json` that can contain the 
 }
 ```
 
+## Execution
+
+To run, the tool requires a configuration file (see above or [here](/EchoRepeatConfig.json)) and an input file
+(see [here](/EchoRepeatDestinations-short.csv)).
+
+An executable jar file is available in
+the [GitHub Releases section](https://github.com/netsec-ethz/scion-java-multiping/releases/download/v0.1.0/scion-multiping-0.1.0-shaded.jar).
+It can be executed
+with:
+
+```dtd
+java -jar scion-multiping-0.1.0-shaded.jar
+```
+
+See also the troubleshooting section below in case of issues.
+
 ## Output
 
 The output file is a csv file with one row per round/path.
@@ -86,10 +102,13 @@ This shows a LOCAL_AS and a NO_PATH event:
 71-2:0:4a,,2024-09-13T15:46:16.554705200Z,NO_PATH,0,[]
 ```
 
-# Trouble shooting
+# Troubleshooting
 
 ## No DNS search domain found. Please check your /etc/resolv.conf or similar.
-This happens, for example, on Windows when using a VPN. One solution is to execute the jar with the following property (the example works only for `ethz.ch`):
+
+This happens, for example, on Windows when using a VPN. One solution is to execute the jar with the following property (
+the example works only for `ethz.ch`):
+
 ```
 java -DSCION_DNS_SEARCH_DOMAINS=ethz.ch.  -jar target/scion-multiping-0.0.1-ALPHA-SNAPSHOT-shaded.jar
 ```
