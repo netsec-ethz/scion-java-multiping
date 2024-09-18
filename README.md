@@ -7,6 +7,7 @@ MultiPing provides several tools:
 * `DownloadAssignmentList` for downloading a list of known ISD/AS assignment
 * `EchoAll` for sending a single traceroute to all known ASes along the shortest path (default behaviour)
 * `EchoRepeat` for repeatedly probing (traceroute) multiple paths to multiple ASes.
+* `EchoResponder` for responding to incoming echo requests.
 
 # `DownloadAssignmentList`
 
@@ -102,6 +103,17 @@ This shows a LOCAL_AS and a NO_PATH event:
 71-2:0:4a,,2024-09-13T15:46:16.554705200Z,NO_PATH,0,[]
 ```
 
+# `EchoResponder`
+
+The `EchoResponder` can be configured with a configuration file `EchoResponderConfig.json`, it has two options:
+
+```json
+{
+  "localPort": 30041,
+  "consoleOutput": true
+}
+```
+
 # Troubleshooting
 
 ## No DNS search domain found. Please check your /etc/resolv.conf or similar.
@@ -110,5 +122,5 @@ This happens, for example, on Windows when using a VPN. One solution is to execu
 the example works only for `ethz.ch`):
 
 ```
-java -DSCION_DNS_SEARCH_DOMAINS=ethz.ch.  -jar target/scion-multiping-0.0.1-ALPHA-SNAPSHOT-shaded.jar
+java -Dorg.scion.dnsSearchDomains=ethz.ch. -jar target/scion-multiping-0.0.1-ALPHA-SNAPSHOT-shaded.jar
 ```

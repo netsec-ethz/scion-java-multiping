@@ -47,8 +47,6 @@ import org.scion.multiping.util.Record;
  */
 public class EchoRepeatBlocking {
   private static final String FILE_CONFIG = "EchoRepeatConfig.json";
-  private static final String FILE_INPUT = "EchoRepeatDestinations-short.csv";
-  private static final String FILE_OUTPUT = "EchoRepeatOutput.csv";
 
   private final int localPort;
 
@@ -63,9 +61,10 @@ public class EchoRepeatBlocking {
   private int nPathTimeout = 0;
 
   private static Config config;
+  private static FileWriter fileWriter;
+
   private static final List<Result> results = new ArrayList<>();
   private static final List<org.scion.multiping.util.Record> records = new ArrayList<>();
-  private static FileWriter fileWriter;
 
   private enum Policy {
     /** Fastest path using SCMP traceroute */
@@ -86,17 +85,17 @@ public class EchoRepeatBlocking {
   }
 
   public static void main(String[] args) throws IOException {
-    PRINT = true;
     // System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
 
     config = Config.read(FILE_CONFIG);
+    PRINT = config.consoleOutput;
+
     // Output: ISD/AS, remote IP, time, hopCount, path, [pings]
-    fileWriter = new FileWriter(FILE_OUTPUT);
+    fileWriter = new FileWriter(config.outputFile);
 
     // Local port must be 30041 for networks that expect a dispatcher
-    EchoRepeatBlocking demo = new EchoRepeatBlocking(30041);
-    List<ParseAssignments.HostEntry> list = ParseAssignments.getList(FILE_INPUT);
-    // List<ParseAssignments.HostEntry> list = DownloadAssignments.getList();
+    EchoRepeatBlocking demo = new EchoRepeatBlocking(config.localPort);
+    List<ParseAssignments.HostEntry> list = ParseAssignments.getList(config.isdAsFile);
     for (int i = 0; i < config.roundRepeatCnt; i++) {
       Instant start = Instant.now();
       for (ParseAssignments.HostEntry e : list) {

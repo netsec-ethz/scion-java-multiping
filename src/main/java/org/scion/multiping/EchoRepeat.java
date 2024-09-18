@@ -63,7 +63,7 @@ public class EchoRepeat {
   }
 
   public static void main(String[] args) throws IOException {
-    //    System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
+    // System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
 
     config = Config.read(FILE_CONFIG);
     PRINT = config.consoleOutput;

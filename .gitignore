@@ -25,9 +25,5 @@ replay_pid*
 
 .idea
 target/
-cert.crt
-cert.csr
-cert.key
-http3-response.*
 
 dependency-reduced-pom.xml
