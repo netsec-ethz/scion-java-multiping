@@ -77,7 +77,6 @@
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>${scion.slf4j.version}</version>
-<!--            <scope>test</scope>-->
         </dependency>
 
         <dependency>
@@ -295,13 +294,6 @@
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-shade-plugin</artifactId>
                         <version>2.4.3</version>
-                        <dependencies>
-                            <dependency>
-                                <groupId>io.grpc</groupId>
-                                <artifactId>grpc-netty-shaded</artifactId>
-                                <version>${scion.io-grpc.version}</version>
-                            </dependency>
-                        </dependencies>
                         <executions>
                             <execution>
                                 <phase>package</phase>
