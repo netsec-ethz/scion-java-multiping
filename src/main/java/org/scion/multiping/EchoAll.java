@@ -210,10 +210,9 @@ public class EchoAll {
     Path path = PathPolicy.MIN_HOPS.filter(paths);
     refBest.set(path);
     ByteBuffer bb = ByteBuffer.allocate(0);
-    int id = 0;
-    try (ScmpChannel scmpChannel = Scmp.createChannel(localPort)) {
+    try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
       nPathTried++;
-      Scmp.EchoMessage msg = scmpChannel.sendEchoRequest(path, id, bb);
+      Scmp.EchoMessage msg = sender.sendEchoRequest(path, bb);
       if (msg == null) {
         println(" -> local AS, no timing available");
         nPathSuccess++;
@@ -238,9 +237,9 @@ public class EchoAll {
   private Scmp.TracerouteMessage findShortestTR(List<Path> paths, Ref<Path> refBest) {
     Path path = PathPolicy.MIN_HOPS.filter(paths);
     refBest.set(path);
-    try (ScmpChannel scmpChannel = Scmp.createChannel(localPort)) {
+    try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
       nPathTried++;
-      List<Scmp.TracerouteMessage> messages = scmpChannel.sendTracerouteRequest(path);
+      List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(path);
       if (messages.isEmpty()) {
         println(" -> local AS, no timing available");
         nPathSuccess++;
@@ -269,10 +268,10 @@ public class EchoAll {
 
   private Scmp.TracerouteMessage findFastestTR(List<Path> paths, Ref<Path> refBest) {
     Scmp.TracerouteMessage best = null;
-    try (ScmpChannel scmpChannel = Scmp.createChannel(localPort)) {
+    try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
       for (Path path : paths) {
         nPathTried++;
-        List<Scmp.TracerouteMessage> messages = scmpChannel.sendTracerouteRequest(path);
+        List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(path);
         if (messages.isEmpty()) {
           println(" -> local AS, no timing available");
           nPathSuccess++;

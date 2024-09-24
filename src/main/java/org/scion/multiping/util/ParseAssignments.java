@@ -34,6 +34,7 @@ public class ParseAssignments {
   public static class HostEntry {
     private final long isdAs;
     private final String name;
+    private String ip;
 
     HostEntry(long isdAs, String name) {
       this.isdAs = isdAs;
@@ -46,6 +47,10 @@ public class ParseAssignments {
 
     public String getName() {
       return name;
+    }
+
+    public String getIP() {
+      return ip;
     }
   }
 
@@ -68,9 +73,18 @@ public class ParseAssignments {
         return;
       }
       String[] lineParts = s.split(",");
-      long isdAs = ScionUtil.parseIA(lineParts[0].substring(1, lineParts[0].length() - 1));
+      long isdAs;
+      if (lineParts[0].startsWith("\"")) {
+        isdAs = ScionUtil.parseIA(lineParts[0].substring(1, lineParts[0].length() - 1));
+      } else {
+        isdAs = ScionUtil.parseIA(lineParts[0]);
+      }
       String name = lineParts[1];
-      entries.add(new HostEntry(isdAs, name));
+      HostEntry newEntry = new HostEntry(isdAs, name);
+      if (lineParts.length >= 3) {
+        newEntry.ip = lineParts[2];
+      }
+      entries.add(newEntry);
     } catch (IndexOutOfBoundsException | IllegalArgumentException e) {
       LOG.info("ERROR parsing file {}: error=\"{}\" line=\"{}\"", path, e.getMessage(), line);
     }

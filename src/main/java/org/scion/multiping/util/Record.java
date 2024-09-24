@@ -80,7 +80,17 @@ public class Record {
     return a;
   }
 
+  public Attempt registerAttempt(Attempt.State attemptState) {
+    Attempt a = new Attempt(attemptState);
+    attempts.add(a);
+    if (attemptState != Attempt.State.SUCCESS && state == State.SUCCESS) {
+      state = State.ERROR;
+    }
+    return a;
+  }
+
   public void finishMeasurement(FileWriter fileWriter) {
+    summarizeState();
     int nHops = path == null ? 0 : PathRawParser.create(path.getRawPath()).getHopCount();
     StringBuilder out = new StringBuilder(ScionUtil.toStringIA(isdAs));
     out.append(",").append(remoteIP == null ? "" : remoteIP);
@@ -89,7 +99,11 @@ public class Record {
     out.append(",").append(nHops);
     out.append(",").append(path == null ? "[]" : ScionUtil.toStringPath(path.getMetadata()));
     for (Attempt a : attempts) {
-      out.append(",").append(round(a.pingMs, 2));
+      if (a.state == Attempt.State.SUCCESS) {
+        out.append(",").append(round(a.pingMs, 2));
+      } else {
+        out.append(",").append(a.state.name());
+      }
     }
     out.append(System.lineSeparator());
     try {
@@ -98,6 +112,16 @@ public class Record {
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  private State summarizeState() {
+    for (Attempt a : attempts) {
+      if (a.state != Attempt.State.SUCCESS) {
+        this.state = State.ERROR;
+        return this.state;
+      }
+    }
+    return this.state;
   }
 
   public void setState(State state) {
@@ -135,10 +159,16 @@ public class Record {
     public enum State {
       SUCCESS,
       TIMEOUT,
+      ERROR_SEQID,
+      ERROR_PATH,
     }
 
     private double pingMs;
     private final State state;
+
+    Attempt(State state) {
+      this.state = state;
+    }
 
     Attempt(Scmp.TimedMessage msg) {
       if (msg.isTimedOut()) {
