@@ -45,27 +45,30 @@ public class Record {
   private final Path path;
   private String remoteIP;
   private String icmp;
+  private boolean isEcho;
+  private final int attemptRepeatCount;
   private State state = State.SUCCESS;
 
-  public Record(Instant time, Path request, long isdAs) {
+  public Record(Instant time, Path request, long isdAs, int attemptRepeatCount) {
     this.isdAs = isdAs;
     this.time = time;
     this.path = request;
+    this.attemptRepeatCount = attemptRepeatCount;
   }
 
-  public static Record startMeasurement(Path path) {
-    return new Record(Instant.now(), path, path.getRemoteIsdAs());
+  public static Record startMeasurement(Path path, int attemptRepeatCount) {
+    return new Record(Instant.now(), path, path.getRemoteIsdAs(), attemptRepeatCount);
   }
 
   public static Record createNoPathRecord(long isdAs, FileWriter fileWriter) {
-    Record rec = new Record(Instant.now(), null, isdAs);
+    Record rec = new Record(Instant.now(), null, isdAs, 0);
     rec.setState(State.NO_PATH);
     rec.finishMeasurement(fileWriter);
     return rec;
   }
 
   public static Record createErrorRecord(long isdAs, FileWriter fileWriter) {
-    Record rec = new Record(Instant.now(), null, isdAs);
+    Record rec = new Record(Instant.now(), null, isdAs, 0);
     rec.setState(State.ERROR);
     rec.finishMeasurement(fileWriter);
     return rec;
@@ -95,6 +98,7 @@ public class Record {
     StringBuilder out = new StringBuilder(ScionUtil.toStringIA(isdAs));
     out.append(",").append(remoteIP == null ? "" : remoteIP);
     out.append(",").append(time);
+    out.append(",").append(isEcho ? "ECHO" : "TRACE");
     out.append(",").append(state.name());
     out.append(",").append(nHops);
     out.append(",").append(path == null ? "[]" : ScionUtil.toStringPath(path.getMetadata()));
@@ -121,6 +125,10 @@ public class Record {
         return this.state;
       }
     }
+    if (attempts.size() < attemptRepeatCount) {
+      this.state = State.ERROR;
+      return State.ERROR;
+    }
     return this.state;
   }
 
@@ -142,6 +150,14 @@ public class Record {
 
   public String getRemoteIP() {
     return remoteIP;
+  }
+
+  public void isEcho(boolean b) {
+    this.isEcho = b;
+  }
+
+  public boolean isEcho() {
+    return isEcho;
   }
 
   @Override

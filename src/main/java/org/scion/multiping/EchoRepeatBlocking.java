@@ -269,7 +269,7 @@ public class EchoRepeatBlocking {
       for (int i = 0; i < paths.size() && i < config.maxPathsPerDestination; i++) {
         Path path = paths.get(i);
         nPathTried++;
-        org.scion.multiping.util.Record rec = Record.startMeasurement(path);
+        org.scion.multiping.util.Record rec = Record.startMeasurement(path, config.attemptRepeatCnt);
         records.add(rec);
         for (int attempt = 0; attempt < config.attemptRepeatCnt; attempt++) {
           Instant start = Instant.now();

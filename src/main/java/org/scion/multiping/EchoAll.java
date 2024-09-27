@@ -88,7 +88,7 @@ public class EchoAll {
 
   public static void main(String[] args) throws IOException {
     PRINT = true;
-    // System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
+    System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
 
     // Local port must be 30041 for networks that expect a dispatcher
     EchoAll demo = new EchoAll(30041);

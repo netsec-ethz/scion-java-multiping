@@ -20,6 +20,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.*;
@@ -48,6 +49,7 @@ import org.scion.multiping.util.Record;
 public class EchoRepeat {
     private static final String FILE_CONFIG = "EchoRepeatConfig.json";
 
+    private final InetSocketAddress dummyIP;
     private final int localPort;
 
     private int nPingTried = 0;
@@ -60,12 +62,13 @@ public class EchoRepeat {
 
     private static final boolean SHOW_PATH = true;
 
-    public EchoRepeat(int localPort) {
+    public EchoRepeat(int localPort) throws UnknownHostException {
         this.localPort = localPort;
+        this.dummyIP = new InetSocketAddress(InetAddress.getByAddress(new byte[]{1, 2, 3, 4}), 12345);
     }
 
     public static void main(String[] args) throws IOException {
-        // System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
+        System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
 
         config = Config.read(FILE_CONFIG);
         PRINT = config.consoleOutput;
@@ -107,7 +110,7 @@ public class EchoRepeat {
         // Dummy address. The traceroute will contact the control service IP instead.
         InetSocketAddress dstIP;
         if (remote.getIP() == null) {
-            dstIP = new InetSocketAddress(InetAddress.getByAddress(new byte[]{1, 2, 3, 4}), 12345);
+            dstIP = dummyIP;
         } else {
             dstIP = new InetSocketAddress(remote.getIP(), 30041);
         }
@@ -172,7 +175,7 @@ public class EchoRepeat {
                 for (Record rec : recordList) {
                     nPingTried++;
                     int sequenceID;
-                    if (rec.getRemoteIP() == null) {
+                    if (!rec.isEcho()) {
                         sequenceID = sender.sendTracerouteLast(rec.getPath());
                     } else {
                         sequenceID = sender.sendEcho(rec.getPath(), empty);
@@ -229,6 +232,7 @@ public class EchoRepeat {
                 if (usedMillis < config.attemptDelayMs) {
                     sleep(config.attemptDelayMs - usedMillis);
                 }
+//                System.out.println("Summary: success=" + nPingSuccess + "  t/o=" + nPingTimeout + "  error=" + nPingError);
             }
 
             for (Record rec : recordList) {
@@ -243,11 +247,12 @@ public class EchoRepeat {
         }
     }
 
-    private static List<Record> initializeRecords(List<Path> paths, int maxPath) {
+    private List<Record> initializeRecords(List<Path> paths, int maxPath) {
         List<Record> recordList = new ArrayList<>();
         for (int pathId = 0; pathId < maxPath; pathId++) {
             Path path = paths.get(pathId);
-            Record rec = Record.startMeasurement(path);
+            Record rec = Record.startMeasurement(path, config.attemptRepeatCnt);
+            rec.isEcho(path.getRemoteAddress() != dummyIP.getAddress());
             if (path.getRawPath().length == 0) {
                 println(" -> local AS, no timing available");
                 rec.setState(Record.State.LOCAL_AS);
