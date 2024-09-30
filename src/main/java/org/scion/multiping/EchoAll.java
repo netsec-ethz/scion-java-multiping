@@ -20,10 +20,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
+
 import org.scion.jpan.*;
 import org.scion.jpan.internal.PathRawParser;
 import org.scion.multiping.util.*;
@@ -92,7 +90,6 @@ public class EchoAll {
 
     // Local port must be 30041 for networks that expect a dispatcher
     EchoAll demo = new EchoAll(30041);
-    // List<ParseAssignments.HostEntry> list = ParseAssignments.getList();
     List<ParseAssignments.HostEntry> list = DownloadAssignments.getList();
     for (ParseAssignments.HostEntry e : list) {
       print(ScionUtil.toStringIA(e.getIsdAs()) + " \"" + e.getName() + "\"  ");
@@ -111,8 +108,8 @@ public class EchoAll {
     // max:
     Result maxPing =
         results.stream().max((o1, o2) -> (int) (o1.getPingMs() - o2.getPingMs())).get();
-    Result maxHops = results.stream().max((o1, o2) -> o1.getHopCount() - o2.getHopCount()).get();
-    Result maxPaths = results.stream().max((o1, o2) -> o1.getPathCount() - o2.getPathCount()).get();
+    Result maxHops = results.stream().max(Comparator.comparingInt(Result::getHopCount)).get();
+    Result maxPaths = results.stream().max(Comparator.comparingInt(Result::getPathCount)).get();
 
     println("");
     println("Max hops  = " + maxHops.getHopCount() + ":    " + maxHops);
