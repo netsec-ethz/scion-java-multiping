@@ -22,6 +22,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import org.scion.jpan.*;
 import org.scion.jpan.internal.PathRawParser;
@@ -112,8 +113,8 @@ public class EchoRepeatBlocking {
     // max:
     Result maxPing =
         results.stream().max((o1, o2) -> (int) (o1.getPingMs() - o2.getPingMs())).get();
-    Result maxHops = results.stream().max((o1, o2) -> o1.getHopCount() - o2.getHopCount()).get();
-    Result maxPaths = results.stream().max((o1, o2) -> o1.getPathCount() - o2.getPathCount()).get();
+    Result maxHops = results.stream().max(Comparator.comparingInt(Result::getHopCount)).get();
+    Result maxPaths = results.stream().max(Comparator.comparingInt(Result::getPathCount)).get();
 
     println("");
     println("Max hops  = " + maxHops.getHopCount() + ":    " + maxHops);
@@ -210,10 +211,9 @@ public class EchoRepeatBlocking {
     Path path = PathPolicy.MIN_HOPS.filter(paths);
     refBest.set(path);
     ByteBuffer bb = ByteBuffer.allocate(0);
-    int id = 0;
-    try (ScmpChannel scmpChannel = Scmp.createChannel(localPort)) {
+    try (ScmpSender scmpChannel = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
       nPathTried++;
-      Scmp.EchoMessage msg = scmpChannel.sendEchoRequest(path, id, bb);
+      Scmp.EchoMessage msg = scmpChannel.sendEchoRequest(path, bb);
       if (msg == null) {
         println(" -> local AS, no timing available");
         nPathSuccess++;
@@ -238,7 +238,7 @@ public class EchoRepeatBlocking {
   private Scmp.TracerouteMessage findShortestTR(List<Path> paths, Ref<Path> refBest) {
     Path path = PathPolicy.MIN_HOPS.filter(paths);
     refBest.set(path);
-    try (ScmpChannel scmpChannel = Scmp.createChannel(localPort)) {
+    try (ScmpSender scmpChannel = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
       nPathTried++;
       List<Scmp.TracerouteMessage> messages = scmpChannel.sendTracerouteRequest(path);
       if (messages.isEmpty()) {
@@ -265,7 +265,7 @@ public class EchoRepeatBlocking {
 
   private Scmp.TracerouteMessage findFastestTR(List<Path> paths, Ref<Path> refBest) {
     Scmp.TracerouteMessage best = null;
-    try (ScmpChannel scmpChannel = Scmp.createChannel(localPort)) {
+    try (ScmpSender scmpChannel = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
       for (int i = 0; i < paths.size() && i < config.maxPathsPerDestination; i++) {
         Path path = paths.get(i);
         nPathTried++;

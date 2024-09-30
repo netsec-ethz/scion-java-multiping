@@ -104,7 +104,7 @@ public class EchoRepeat {
     println(" error      = " + ICMP.nIcmpError);
   }
 
-  private void runRepeat(ParseAssignments.HostEntry remote) throws IOException {
+  private void runRepeat(ParseAssignments.HostEntry remote) {
     ScionService service = Scion.defaultService();
     // Dummy address. The traceroute will contact the control service IP instead.
     InetSocketAddress dstIP;
@@ -197,7 +197,7 @@ public class EchoRepeat {
           Scmp.TimedMessage msg = handler.messages.remove();
           Record rec = seqToPathMap.get(msg.getSequenceNumber());
           if (rec == null) {
-            System.out.println("ERROR: SeqID not found: " + msg.getSequenceNumber());
+            println("ERROR: SeqID not found: " + msg.getSequenceNumber());
             if (msg.isTimedOut()) {
               nPingTimeout++;
             } else {
@@ -219,7 +219,6 @@ public class EchoRepeat {
           }
         }
 
-        // TODO errors
         while (!handler.errors.isEmpty()) {
           nPingError++;
           handler.errors.remove(); // TODO use it
@@ -231,8 +230,6 @@ public class EchoRepeat {
         if (usedMillis < config.attemptDelayMs) {
           sleep(config.attemptDelayMs - usedMillis);
         }
-        //                System.out.println("Summary: success=" + nPingSuccess + "  t/o=" +
-        // nPingTimeout + "  error=" + nPingError);
       }
 
       for (Record rec : recordList) {

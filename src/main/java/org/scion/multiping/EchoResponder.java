@@ -30,11 +30,12 @@ public class EchoResponder {
     Config config = Config.read(FILE_CONFIG);
     PRINT = config.consoleOutput;
 
-    try (ScmpChannel responder = Scmp.createChannel(Constants.SCMP_PORT)) {
+    try (ScmpResponder responder =
+        Scmp.newResponderBuilder().setLocalPort(Constants.SCMP_PORT).build()) {
       responder.setScmpErrorListener(EchoResponder::printError);
       responder.setOption(ScionSocketOptions.SCION_API_THROW_PARSER_FAILURE, true);
       responder.setScmpEchoListener(EchoResponder::print);
-      responder.setUpScmpEchoResponder();
+      responder.start();
     }
   }
 
