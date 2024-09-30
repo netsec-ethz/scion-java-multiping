@@ -13,11 +13,11 @@ MultiPing provides several tools:
 ## Execution
 
 All tools can be run from the executable jar file which is available in
-the [GitHub Releases section](https://github.com/netsec-ethz/scion-java-multiping/releases/download/v0.1.0/scion-multiping-0.1.0-shaded.jar).
+the [GitHub Releases section](https://github.com/netsec-ethz/scion-java-multiping/releases/download/v0.2.0/scion-multiping-0.2.0-executable.jar).
 It can be executed with:
 
 ```
-java -jar scion-multiping-0.1.0-shaded.jar [tool-command]
+java -jar scion-multiping-0.2.0-executable.jar [tool-command]
 ```
 
 Some tools require configuration files, see below in the tool description sections.   
@@ -102,7 +102,7 @@ request to `64-2:0:4c,192.168.0.1`.
 THe tool can be executed with:
 
 ```
-java -jar scion-multiping-0.1.0-shaded.jar ping-repeat
+java -jar scion-multiping-0.2.0-executable.jar ping-repeat
 ```
 
 ## Output
@@ -156,5 +156,5 @@ following property (
 the example works only for `ethz.ch`):
 
 ```
-java -Dorg.scion.dnsSearchDomains=ethz.ch. -jar target/scion-multiping-0.1.0-shaded.jar
+java -Dorg.scion.dnsSearchDomains=ethz.ch. -jar scion-multiping-0.2.0-executable.jar
 ```
