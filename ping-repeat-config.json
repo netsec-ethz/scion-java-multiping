@@ -5,6 +5,6 @@
   "roundDelaySec": 600,
   "maxPathsPerDestination": 20,
   "tryICMP": false,
-  "isdAsFile": "EchoRepeatDestinations-short.csv",
-  "outputFile": "EchoRepeatOutput.csv"
+  "isdAsInputFile": "ping-repeat-destinations.csv",
+  "outputFile": "ping-repeat-output.csv"
 }

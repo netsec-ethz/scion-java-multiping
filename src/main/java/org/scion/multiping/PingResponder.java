@@ -23,8 +23,8 @@ import org.scion.multiping.util.Config;
 import org.scion.multiping.util.Util;
 
 /** A simple echo responder that responds to SCMP echo requests. */
-public class EchoResponder {
-  private static final String FILE_CONFIG = "EchoResponderConfig.json";
+public class PingResponder {
+  private static final String FILE_CONFIG = "ping-responder-config.json";
 
   public static void main(String[] args) throws IOException {
     Config config = Config.read(FILE_CONFIG);
@@ -32,9 +32,9 @@ public class EchoResponder {
 
     try (ScmpResponder responder =
         Scmp.newResponderBuilder().setLocalPort(Constants.SCMP_PORT).build()) {
-      responder.setScmpErrorListener(EchoResponder::printError);
+      responder.setScmpErrorListener(PingResponder::printError);
       responder.setOption(ScionSocketOptions.SCION_API_THROW_PARSER_FAILURE, true);
-      responder.setScmpEchoListener(EchoResponder::print);
+      responder.setScmpEchoListener(PingResponder::print);
       responder.start();
     }
   }

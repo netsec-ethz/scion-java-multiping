@@ -4,28 +4,49 @@ A tool that allows pinging / trace route) all known ASes in one run.
 
 MultiPing provides several tools:
 
-* `DownloadAssignmentList` for downloading a list of known ISD/AS assignment
-* `EchoAll` for sending a single traceroute to all known ASes along the shortest path (default behaviour)
-* `EchoRepeat` for repeatedly probing (traceroute) multiple paths to multiple ASes.
-* `EchoResponder` for responding to incoming echo requests.
+* `Download Assignments` for downloading a list of known ISD/AS assignment
+* `Ping All` for sending a single traceroute to all known ASes along the shortest path (default
+  behaviour)
+* `Ping Repeat` for repeatedly probing (traceroute) multiple paths to multiple ASes.
+* `Ping Responder` for responding to incoming echo requests.
 
-# `DownloadAssignmentList`
+## Execution
 
-The tool parses [Anapayas ISD/AS assignment website](https://docs.anapaya.net/en/latest/resources/isd-as-assignments/)
-and writes the result to a local file 'EchoRepeatDestinations-new.csv'.
+All tools can be run from the executable jar file which is available in
+the [GitHub Releases section](https://github.com/netsec-ethz/scion-java-multiping/releases/download/v0.1.0/scion-multiping-0.1.0-shaded.jar).
+It can be executed with:
 
-# `EchoAll`
+```
+java -jar scion-multiping-0.1.0-shaded.jar [tool-command]
+```
 
-The tool parses [Anapayas ISD/AS assignment website](https://docs.anapaya.net/en/latest/resources/isd-as-assignments/),
+Some tools require configuration files, see below in the tool description sections.   
+See also the troubleshooting section below in case of issues.
+
+# Download Assignments
+
+The tool
+parses [Anapayas ISD/AS assignment website](https://docs.anapaya.net/en/latest/resources/isd-as-assignments/)
+and writes the result to a local file `isd-as-assignments.csv`.
+Note: the `isd-as-assignments.csv` output file can be directly used as input file for the PingRepeat
+
+# Ping All
+
+The tool
+parses [Anapayas ISD/AS assignment website](https://docs.anapaya.net/en/latest/resources/isd-as-assignments/),
 identifies the shortest path to each AS and sends a traceroute to each AS.
-It reports the number of paths to each AS as well as the shortest path with latency, remote IP, hop count and remote IP.
+It reports the number of paths to each AS as well as the shortest path with latency, remote IP, hop
+count and remote IP.
 
 It also provides a summary of its findings.
 
-# `EchoRepeat`
+# Ping Repeat
 
-The tool reads a list if ISD/AS codes from a csv file (`isdAsFile`), repeatedly sends traceroute
-SCMP requests to each AS and writes the results to an output file (`outputFile`).
+The tool reads a list if ISD/AS codes from a csv file (
+`isdAsInputFile`, [example](/ping-repeat-destinations.json)), repeatedly sends
+traceroute
+SCMP requests to each AS and writes the results to an output file (
+`outputFile`, [example](/ping-repeat-output.csv)).
 
 SCMP request are sent in several rounds, each round consisting of several attempts.
 In the default configuration (see below) it will:
@@ -41,7 +62,9 @@ In the default configuration (see below) it will:
 
 ## Configuration
 
-The tool uses a configuration file `EchoRepeatConfig.json` that can contain the following arguments:
+The tool uses a configuration file `ping-repeat-config.json` ([example](/ping-repeat-config.json))
+that can contain the following
+arguments:
 
 ```json
 {
@@ -51,8 +74,8 @@ The tool uses a configuration file `EchoRepeatConfig.json` that can contain the 
   "roundDelaySec": 600,
   "maxPathsPerDestination": 20,
   "tryICMP": false,
-  "isdAsFile": "EchoRepeatDestinations-short.csv",
-  "outputFile": "EchoOutput.csv",
+  "isdAsInputFile": "ping-repeat-destinations.csv",
+  "outputFile": "ping-repeat-output.csv",
   "localPort": 30041,
   "consoleOutput": true
 }
@@ -60,32 +83,27 @@ The tool uses a configuration file `EchoRepeatConfig.json` that can contain the 
 
 ## Input
 
-The input file is a csv file with ISD/AS, label and IP (optional). The ISD/AS can optionally be enclosed in `"`.
-When an IP is given then the tool will execute an `echo` requerst to the IP, otherwise it will execute a `traceroute` request to the border router of the destination AS. Example:
+The input file is a csv file with ISD/AS, label and IP (optional). The ISD/AS can optionally be
+enclosed in `"`.
+When an IP is given then the tool will execute an `echo` request to the IP, otherwise it will
+execute a `traceroute` request to the border router of the destination
+AS. [Example](/ping-repeat-destinations.csv):
 
 ```
 64-2:0:9,"ETH Zurich (ETHZ)"
 "64-2:0:4c","AWS PoC Anapaya",192.168.0.1
 ```
 
-This will result in a traceroute request to th ETH border router of `64-2:0:9` and a echo request
-to `64-2:0:4c,192.168.0.1 `.
+This will result in a `traceroute` request to th ETH border router of `64-2:0:9` and a `echo`
+request to `64-2:0:4c,192.168.0.1`.
 
 ## Execution
 
-To run, the tool requires a configuration file (see above or [here](/EchoRepeatConfig.json)) and an input file
-(see [here](/EchoRepeatDestinations-short.csv)).
-
-An executable jar file is available in
-the [GitHub Releases section](https://github.com/netsec-ethz/scion-java-multiping/releases/download/v0.1.0/scion-multiping-0.1.0-shaded.jar).
-It can be executed
-with:
+THe tool can be executed with:
 
 ```
-java -jar scion-multiping-0.1.0-shaded.jar
+java -jar scion-multiping-0.1.0-shaded.jar ping-repeat
 ```
-
-See also the troubleshooting section below in case of issues.
 
 ## Output
 
@@ -117,9 +135,10 @@ This shows a LOCAL_AS and a NO_PATH event:
 71-2:0:4a,,2024-09-13T15:46:16.554705200Z,NO_PATH,0,[]
 ```
 
-# `EchoResponder`
+# Ping Responder
 
-The `EchoResponder` can be configured with a configuration file `EchoResponderConfig.json`, it has two options:
+The `PingResponder` can be configured with a configuration file `ping-responder-config.json`, it has
+two options:
 
 ```json
 {
@@ -132,9 +151,10 @@ The `EchoResponder` can be configured with a configuration file `EchoResponderCo
 
 ## No DNS search domain found. Please check your /etc/resolv.conf or similar.
 
-This happens, for example, on Windows when using a VPN. One solution is to execute the jar with the following property (
+This happens, for example, on Windows when using a VPN. One solution is to execute the jar with the
+following property (
 the example works only for `ethz.ch`):
 
 ```
-java -Dorg.scion.dnsSearchDomains=ethz.ch. -jar target/scion-multiping-0.0.1-ALPHA-SNAPSHOT-shaded.jar
+java -Dorg.scion.dnsSearchDomains=ethz.ch. -jar target/scion-multiping-0.1.0-shaded.jar
 ```

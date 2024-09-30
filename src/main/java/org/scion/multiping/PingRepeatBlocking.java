@@ -46,8 +46,8 @@ import org.scion.multiping.util.Record;
  * <p>Fastest: Report the path with the lowest latency. This takes much longer because it will try
  * all available paths before it can report on the best path.
  */
-public class EchoRepeatBlocking {
-  private static final String FILE_CONFIG = "EchoRepeatConfig.json";
+public class PingRepeatBlocking {
+  private static final String FILE_CONFIG = "ping-repeat-config.json";
 
   private final int localPort;
 
@@ -80,7 +80,7 @@ public class EchoRepeatBlocking {
   private static final Policy POLICY = Policy.FASTEST_TR;
   private static final boolean SHOW_PATH = true;
 
-  public EchoRepeatBlocking(int localPort) {
+  public PingRepeatBlocking(int localPort) {
     this.localPort = localPort;
   }
 
@@ -94,8 +94,8 @@ public class EchoRepeatBlocking {
     fileWriter = new FileWriter(config.outputFile);
 
     // Local port must be 30041 for networks that expect a dispatcher
-    EchoRepeatBlocking demo = new EchoRepeatBlocking(config.localPort);
-    List<ParseAssignments.HostEntry> list = ParseAssignments.getList(config.isdAsFile);
+    PingRepeatBlocking demo = new PingRepeatBlocking(config.localPort);
+    List<ParseAssignments.HostEntry> list = ParseAssignments.getList(config.isdAsInputFile);
     for (int i = 0; i < config.roundRepeatCnt; i++) {
       Instant start = Instant.now();
       for (ParseAssignments.HostEntry e : list) {

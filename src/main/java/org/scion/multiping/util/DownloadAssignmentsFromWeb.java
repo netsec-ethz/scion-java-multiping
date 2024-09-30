@@ -22,16 +22,16 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.scion.jpan.ScionUtil;
 
-public class DownloadAssignments {
+public class DownloadAssignmentsFromWeb {
   private static final String HTTPS_URL =
       "https://docs.anapaya.net/en/latest/resources/isd-as-assignments/";
 
   public static void main(String[] args) throws IOException {
-    new DownloadAssignments().jsoup();
+    new DownloadAssignmentsFromWeb().jsoup();
   }
 
   public static List<ParseAssignments.HostEntry> getList() {
-    DownloadAssignments pa = new DownloadAssignments();
+    DownloadAssignmentsFromWeb pa = new DownloadAssignmentsFromWeb();
     try {
       return pa.jsoup();
     } catch (IOException e) {
