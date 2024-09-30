@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.List;
 import org.scion.jpan.*;
-import org.scion.multiping.util.DownloadAssignments;
+import org.scion.multiping.util.DownloadAssignmentsFromWeb;
 import org.scion.multiping.util.ParseAssignments;
 import org.scion.multiping.util.Util;
 
@@ -40,14 +40,14 @@ import org.scion.multiping.util.Util;
  * <p>Fastest: Report the path with the lowest latency. This takes much longer because it will try
  * all available paths before it can report on the best path.
  */
-public class DownloadAssignmentList {
-  private DownloadAssignmentList() {}
+public class DownloadAssignments {
+  private DownloadAssignments() {}
 
   public static void main(String[] args) throws IOException {
     Util.PRINT = true;
-    String fileName = args.length > 0 ? args[0] : "EchoRepeatDestinations-new.csv";
+    String fileName = args.length > 0 ? args[0] : "isd-as-assignments.csv";
     File csvOutputFile = new File(fileName);
-    List<ParseAssignments.HostEntry> list = DownloadAssignments.getList();
+    List<ParseAssignments.HostEntry> list = DownloadAssignmentsFromWeb.getList();
     try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
       for (ParseAssignments.HostEntry e : list) {
         Util.println(ScionUtil.toStringIA(e.getIsdAs()) + " \"" + e.getName() + "\"  ");

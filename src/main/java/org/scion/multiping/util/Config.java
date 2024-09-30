@@ -24,7 +24,7 @@ public class Config {
   public int roundDelaySec = 10 * 60; // 10 minutes
   public int maxPathsPerDestination = 20;
   public boolean tryICMP = false;
-  public String isdAsFile;
+  public String isdAsInputFile;
   public String outputFile;
   public int localPort = 30041;
   public boolean consoleOutput = true;

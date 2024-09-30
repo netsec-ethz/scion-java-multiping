@@ -45,8 +45,8 @@ import org.scion.multiping.util.Record;
  * <p>Fastest: Report the path with the lowest latency. This takes much longer because it will try
  * all available paths before it can report on the best path.
  */
-public class EchoRepeat {
-  private static final String FILE_CONFIG = "EchoRepeatConfig.json";
+public class PingRepeat {
+  private static final String FILE_CONFIG = "ping-repeat-config.json";
 
   private final InetSocketAddress dummyIP;
   private final int localPort;
@@ -61,7 +61,7 @@ public class EchoRepeat {
 
   private static final boolean SHOW_PATH = true;
 
-  public EchoRepeat(int localPort) throws UnknownHostException {
+  public PingRepeat(int localPort) throws UnknownHostException {
     this.localPort = localPort;
     this.dummyIP = new InetSocketAddress(InetAddress.getByAddress(new byte[] {1, 2, 3, 4}), 12345);
   }
@@ -76,8 +76,8 @@ public class EchoRepeat {
     fileWriter = new FileWriter(config.outputFile);
 
     // Local port must be 30041 for networks that expect a dispatcher
-    EchoRepeat demo = new EchoRepeat(config.localPort);
-    List<ParseAssignments.HostEntry> list = ParseAssignments.getList(config.isdAsFile);
+    PingRepeat demo = new PingRepeat(config.localPort);
+    List<ParseAssignments.HostEntry> list = ParseAssignments.getList(config.isdAsInputFile);
     for (int i = 0; i < config.roundRepeatCnt; i++) {
       Instant start = Instant.now();
       for (ParseAssignments.HostEntry e : list) {

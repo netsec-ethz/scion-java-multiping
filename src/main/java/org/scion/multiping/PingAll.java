@@ -21,7 +21,6 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.*;
-
 import org.scion.jpan.*;
 import org.scion.jpan.internal.PathRawParser;
 import org.scion.multiping.util.*;
@@ -43,7 +42,7 @@ import org.scion.multiping.util.*;
  * <p>Fastest: Report the path with the lowest latency. This takes much longer because it will try
  * all available paths before it can report on the best path.
  */
-public class EchoAll {
+public class PingAll {
   private static final Config config = new Config();
 
   static {
@@ -80,7 +79,7 @@ public class EchoAll {
   private static final Policy POLICY = Policy.SHORTEST_TR;
   private static final boolean SHOW_PATH = true;
 
-  public EchoAll(int localPort) {
+  public PingAll(int localPort) {
     this.localPort = localPort;
   }
 
@@ -89,8 +88,8 @@ public class EchoAll {
     // System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
 
     // Local port must be 30041 for networks that expect a dispatcher
-    EchoAll demo = new EchoAll(30041);
-    List<ParseAssignments.HostEntry> list = DownloadAssignments.getList();
+    PingAll demo = new PingAll(30041);
+    List<ParseAssignments.HostEntry> list = DownloadAssignmentsFromWeb.getList();
     for (ParseAssignments.HostEntry e : list) {
       print(ScionUtil.toStringIA(e.getIsdAs()) + " \"" + e.getName() + "\"  ");
       demo.runDemo(e);
