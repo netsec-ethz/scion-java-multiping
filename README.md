@@ -15,7 +15,7 @@ MultiPing provides several tools:
 All tools can be run from the executable jar file which is available in
 the [GitHub Releases section](https://github.com/netsec-ethz/scion-java-multiping/releases/download/v0.2.0/scion-multiping-0.2.0-executable.jar).
 It can be executed with:
-
+                              https://github.com/netsec-ethz/scion-java-multiping/releases/download/v0.2.0/scion-multiping-0.2.0.jar
 ```
 java -jar scion-multiping-0.2.0-executable.jar [tool-command]
 ```
@@ -43,7 +43,7 @@ It also provides a summary of its findings.
 # Ping Repeat
 
 The tool reads a list if ISD/AS codes from a csv file (
-`isdAsInputFile`, [example](/ping-repeat-destinations.json)), repeatedly sends
+`isdAsInputFile`, [example](/ping-repeat-destinations.csv)), repeatedly sends
 traceroute
 SCMP requests to each AS and writes the results to an output file (
 `outputFile`, [example](/ping-repeat-output.csv)).
