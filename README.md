@@ -58,6 +58,19 @@ The tool uses a configuration file `EchoRepeatConfig.json` that can contain the 
 }
 ```
 
+## Input
+
+The input file is a csv file with ISD/AS, label and IP (optional). The ISD/AS can optionally be enclosed in `"`.
+When an IP is given then the tool will execute an `echo` requerst to the IP, otherwise it will execute a `traceroute` request to the border router of the destination AS. Example:
+
+```
+64-2:0:9,"ETH Zurich (ETHZ)"
+"64-2:0:4c","AWS PoC Anapaya",192.168.0.1
+```
+
+This will result in a traceroute request to th ETH border router of `64-2:0:9` and a echo request
+to `64-2:0:4c,192.168.0.1 `.
+
 ## Execution
 
 To run, the tool requires a configuration file (see above or [here](/EchoRepeatConfig.json)) and an input file
@@ -68,7 +81,7 @@ the [GitHub Releases section](https://github.com/netsec-ethz/scion-java-multipin
 It can be executed
 with:
 
-```dtd
+```
 java -jar scion-multiping-0.1.0-shaded.jar
 ```
 
@@ -82,6 +95,7 @@ Each row consists of:
 * ISD/AS
 * Remote IP (if known)
 * Time stamp
+* Type: can be ECHO or TRACE
 * Result: can be SUCCESS, NO_PATH (no path found to destination), LOCAL_AS (the destination AS
   is the local AS) or ERROR
 * Hop count of the path taken

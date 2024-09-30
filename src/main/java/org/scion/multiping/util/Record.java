@@ -45,27 +45,30 @@ public class Record {
   private final Path path;
   private String remoteIP;
   private String icmp;
+  private boolean isEcho;
+  private final int attemptRepeatCount;
   private State state = State.SUCCESS;
 
-  public Record(Instant time, Path request, long isdAs) {
+  public Record(Instant time, Path request, long isdAs, int attemptRepeatCount) {
     this.isdAs = isdAs;
     this.time = time;
     this.path = request;
+    this.attemptRepeatCount = attemptRepeatCount;
   }
 
-  public static Record startMeasurement(Path path) {
-    return new Record(Instant.now(), path, path.getRemoteIsdAs());
+  public static Record startMeasurement(Path path, int attemptRepeatCount) {
+    return new Record(Instant.now(), path, path.getRemoteIsdAs(), attemptRepeatCount);
   }
 
   public static Record createNoPathRecord(long isdAs, FileWriter fileWriter) {
-    Record rec = new Record(Instant.now(), null, isdAs);
+    Record rec = new Record(Instant.now(), null, isdAs, 0);
     rec.setState(State.NO_PATH);
     rec.finishMeasurement(fileWriter);
     return rec;
   }
 
   public static Record createErrorRecord(long isdAs, FileWriter fileWriter) {
-    Record rec = new Record(Instant.now(), null, isdAs);
+    Record rec = new Record(Instant.now(), null, isdAs, 0);
     rec.setState(State.ERROR);
     rec.finishMeasurement(fileWriter);
     return rec;
@@ -80,16 +83,31 @@ public class Record {
     return a;
   }
 
+  public Attempt registerAttempt(Attempt.State attemptState) {
+    Attempt a = new Attempt(attemptState);
+    attempts.add(a);
+    if (attemptState != Attempt.State.SUCCESS && state == State.SUCCESS) {
+      state = State.ERROR;
+    }
+    return a;
+  }
+
   public void finishMeasurement(FileWriter fileWriter) {
+    summarizeState();
     int nHops = path == null ? 0 : PathRawParser.create(path.getRawPath()).getHopCount();
     StringBuilder out = new StringBuilder(ScionUtil.toStringIA(isdAs));
     out.append(",").append(remoteIP == null ? "" : remoteIP);
     out.append(",").append(time);
+    out.append(",").append(isEcho ? "ECHO" : "TRACE");
     out.append(",").append(state.name());
     out.append(",").append(nHops);
     out.append(",").append(path == null ? "[]" : ScionUtil.toStringPath(path.getMetadata()));
     for (Attempt a : attempts) {
-      out.append(",").append(round(a.pingMs, 2));
+      if (a.state == Attempt.State.SUCCESS) {
+        out.append(",").append(round(a.pingMs, 2));
+      } else {
+        out.append(",").append(a.state.name());
+      }
     }
     out.append(System.lineSeparator());
     try {
@@ -98,6 +116,20 @@ public class Record {
     } catch (IOException e) {
       throw new IllegalStateException(e);
     }
+  }
+
+  private State summarizeState() {
+    for (Attempt a : attempts) {
+      if (a.state != Attempt.State.SUCCESS) {
+        this.state = State.ERROR;
+        return this.state;
+      }
+    }
+    if (attempts.size() < attemptRepeatCount) {
+      this.state = State.ERROR;
+      return State.ERROR;
+    }
+    return this.state;
   }
 
   public void setState(State state) {
@@ -120,6 +152,14 @@ public class Record {
     return remoteIP;
   }
 
+  public void isEcho(boolean b) {
+    this.isEcho = b;
+  }
+
+  public boolean isEcho() {
+    return isEcho;
+  }
+
   @Override
   public String toString() {
     StringBuilder out = new StringBuilder(ScionUtil.toStringIA(isdAs));
@@ -135,10 +175,16 @@ public class Record {
     public enum State {
       SUCCESS,
       TIMEOUT,
+      ERROR_SEQID,
+      ERROR_PATH,
     }
 
     private double pingMs;
     private final State state;
+
+    Attempt(State state) {
+      this.state = state;
+    }
 
     Attempt(Scmp.TimedMessage msg) {
       if (msg.isTimedOut()) {

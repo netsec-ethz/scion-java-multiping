@@ -20,6 +20,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -46,6 +48,7 @@ import org.scion.multiping.util.Record;
 public class EchoRepeat {
   private static final String FILE_CONFIG = "EchoRepeatConfig.json";
 
+  private final InetSocketAddress dummyIP;
   private final int localPort;
 
   private int nPingTried = 0;
@@ -58,8 +61,9 @@ public class EchoRepeat {
 
   private static final boolean SHOW_PATH = true;
 
-  public EchoRepeat(int localPort) {
+  public EchoRepeat(int localPort) throws UnknownHostException {
     this.localPort = localPort;
+    this.dummyIP = new InetSocketAddress(InetAddress.getByAddress(new byte[] {1, 2, 3, 4}), 12345);
   }
 
   public static void main(String[] args) throws IOException {
@@ -100,16 +104,20 @@ public class EchoRepeat {
     println(" error      = " + ICMP.nIcmpError);
   }
 
-  private void runRepeat(ParseAssignments.HostEntry remote) throws IOException {
+  private void runRepeat(ParseAssignments.HostEntry remote) {
     ScionService service = Scion.defaultService();
     // Dummy address. The traceroute will contact the control service IP instead.
-    InetSocketAddress destinationAddress =
-        new InetSocketAddress(InetAddress.getByAddress(new byte[] {1, 2, 3, 4}), 12345);
+    InetSocketAddress dstIP;
+    if (remote.getIP() == null) {
+      dstIP = dummyIP;
+    } else {
+      dstIP = new InetSocketAddress(remote.getIP(), 30041);
+    }
     int nPaths;
     Record rec;
     Ref<Record.Attempt> bestAttempt = Ref.empty();
     try {
-      List<Path> paths = service.getPaths(remote.getIsdAs(), destinationAddress);
+      List<Path> paths = service.getPaths(remote.getIsdAs(), dstIP);
       if (paths.isEmpty()) {
         String src = ScionUtil.toStringIA(service.getLocalIsdAs());
         String dst = ScionUtil.toStringIA(remote.getIsdAs());
@@ -144,45 +152,20 @@ public class EchoRepeat {
   }
 
   private Record measureLatency(List<Path> paths, Ref<Record.Attempt> refBest) {
-    Queue<Scmp.TracerouteMessage> messages = new ConcurrentLinkedQueue<>();
-    Queue<Scmp.ErrorMessage> errors = new ConcurrentLinkedQueue<>();
-
-    ScmpSender.ScmpResponseHandler handler =
-        new ScmpSender.ScmpResponseHandler() {
-          @Override
-          public void onResponse(Scmp.TimedMessage msg) {
-            messages.add((Scmp.TracerouteMessage) msg);
-          }
-
-          @Override
-          public void onTimeout(Scmp.TimedMessage msg) {
-            messages.add((Scmp.TracerouteMessage) msg);
-          }
-
-          @Override
-          public void onError(Scmp.ErrorMessage msg) {
-            errors.add(msg);
-          }
-        };
+    ByteBuffer empty = ByteBuffer.allocate(0);
 
     // Create list of required paths/records
     int maxPath = Math.min(paths.size(), config.maxPathsPerDestination);
-    List<Record> recordList = new ArrayList<>();
-    for (int pathId = 0; pathId < maxPath; pathId++) {
-      Path path = paths.get(pathId);
-      Record rec = Record.startMeasurement(path);
-      if (path.getRawPath().length == 0) {
-        println(" -> local AS, no timing available");
-        rec.setState(Record.State.LOCAL_AS);
-        rec.finishMeasurement(fileWriter);
-        return null;
-      }
-      recordList.add(rec);
+    List<Record> recordList = initializeRecords(paths, maxPath);
+    if (recordList == null) {
+      return null;
     }
 
     Record best = null;
     double currentBestMs = Double.MAX_VALUE;
-    try (ScmpSender scmpChannel = Scmp.createSender(handler, localPort)) {
+    ResponseHandler handler = new ResponseHandler();
+    try (ScmpSenderAsync sender =
+        Scmp.newSenderAsyncBuilder(handler).setLocalPort(localPort).build()) {
       for (int attemptCount = 0; attemptCount < config.attemptRepeatCnt; attemptCount++) {
         Instant start = Instant.now();
         Map<Integer, Record> seqToPathMap = new HashMap<>();
@@ -190,22 +173,38 @@ public class EchoRepeat {
         // Send
         for (Record rec : recordList) {
           nPingTried++;
-          int sequenceID = scmpChannel.asyncTracerouteLast(rec.getPath());
+          int sequenceID;
+          if (!rec.isEcho()) {
+            sequenceID = sender.sendTracerouteLast(rec.getPath());
+          } else {
+            sequenceID = sender.sendEcho(rec.getPath(), empty);
+          }
           if (sequenceID < 0) {
+            rec.registerAttempt(Record.Attempt.State.ERROR_SEQID);
             throw new IllegalStateException();
           }
           seqToPathMap.put(sequenceID, rec);
         }
 
         // Wait
-        while (messages.size() + errors.size() < maxPath) {
+        while (handler.messages.size() + handler.errors.size() < maxPath) {
+          // TODO use notify/wait instead.
           sleep(50);
         }
 
         // Receive
-        while (!messages.isEmpty()) {
-          Scmp.TracerouteMessage msg = messages.remove();
+        while (!handler.messages.isEmpty()) {
+          Scmp.TimedMessage msg = handler.messages.remove();
           Record rec = seqToPathMap.get(msg.getSequenceNumber());
+          if (rec == null) {
+            println("ERROR: SeqID not found: " + msg.getSequenceNumber());
+            if (msg.isTimedOut()) {
+              nPingTimeout++;
+            } else {
+              nPingError++;
+            }
+            continue;
+          }
           Record.Attempt attempt = rec.registerAttempt(msg);
           if (msg.isTimedOut()) {
             nPingTimeout++;
@@ -220,10 +219,9 @@ public class EchoRepeat {
           }
         }
 
-        // TODO errors
-        while (!errors.isEmpty()) {
+        while (!handler.errors.isEmpty()) {
           nPingError++;
-          errors.remove(); // TODO use it
+          handler.errors.remove(); // TODO use it
         }
 
         seqToPathMap.clear();
@@ -243,6 +241,43 @@ public class EchoRepeat {
       println("ERROR: " + e.getMessage());
       nPingError++;
       return null;
+    }
+  }
+
+  private List<Record> initializeRecords(List<Path> paths, int maxPath) {
+    List<Record> recordList = new ArrayList<>();
+    for (int pathId = 0; pathId < maxPath; pathId++) {
+      Path path = paths.get(pathId);
+      Record rec = Record.startMeasurement(path, config.attemptRepeatCnt);
+      rec.isEcho(path.getRemoteAddress() != dummyIP.getAddress());
+      if (path.getRawPath().length == 0) {
+        println(" -> local AS, no timing available");
+        rec.setState(Record.State.LOCAL_AS);
+        rec.finishMeasurement(fileWriter);
+        return null;
+      }
+      recordList.add(rec);
+    }
+    return recordList;
+  }
+
+  private static class ResponseHandler implements ScmpSenderAsync.ResponseHandler {
+    final Queue<Scmp.TimedMessage> messages = new ConcurrentLinkedQueue<>();
+    final Queue<Scmp.ErrorMessage> errors = new ConcurrentLinkedQueue<>();
+
+    @Override
+    public void onResponse(Scmp.TimedMessage msg) {
+      messages.add(msg);
+    }
+
+    @Override
+    public void onTimeout(Scmp.TimedMessage msg) {
+      messages.add(msg);
+    }
+
+    @Override
+    public void onError(Scmp.ErrorMessage msg) {
+      errors.add(msg);
     }
   }
 }
