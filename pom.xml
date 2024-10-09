@@ -12,18 +12,8 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
         <scion.slf4j.version>2.0.9</scion.slf4j.version>
-<!--        <scion.bnd-maven-plugin.version>6.4.0</scion.bnd-maven-plugin.version>-->
-<!--        <scion.build-helper-maven-plugin.version>3.3.0</scion.build-helper-maven-plugin.version>-->
-<!--        <scion.fmt-maven.version>2.23</scion.fmt-maven.version>-->
-<!--        <scion.maven-clean-plugin.version>3.2.0</scion.maven-clean-plugin.version>-->
-<!--        <scion.maven-compiler-plugin.version>3.11.0</scion.maven-compiler-plugin.version>-->
+        <scion.fmt-maven.version>2.23</scion.fmt-maven.version>
         <scion.maven-enforcer-plugin.version>3.3.0</scion.maven-enforcer-plugin.version>
-<!--        <scion.maven-install-plugin.version>3.1.1</scion.maven-install-plugin.version>-->
-<!--        <scion.maven-javadoc-plugin.version>3.5.0</scion.maven-javadoc-plugin.version>-->
-<!--        <scion.maven-plugin-plugin.version>3.8.2</scion.maven-plugin-plugin.version>-->
-<!--        <scion.maven-resources-plugin.version>3.3.1</scion.maven-resources-plugin.version>-->
-<!--        <scion.maven-source-plugin.version>3.2.1</scion.maven-source-plugin.version>-->
-        <scion.maven-surefire-plugin.version>3.0.0</scion.maven-surefire-plugin.version>
     </properties>
 
     <name>SCION Java API Examples</name>
