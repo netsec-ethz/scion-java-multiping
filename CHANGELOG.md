@@ -8,6 +8,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+- Changed JPAN dependency to 0.3.0.
+  [#3](https://github.com/netsec-ethz/scion-java-multiping/pull/3)
+
 ## [0.2.0] - 2024-09-30
 
 ### Added
@@ -17,7 +20,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - EchoResponder
 
 ### Changed
-- CHanged pretty much all names and created an executable main class.
+- Changed pretty much all names and created an executable main class.
   [#2](https://github.com/netsec-ethz/scion-java-multiping/pull/2)
 
 ## [0.1.0] - 2024-09-16
