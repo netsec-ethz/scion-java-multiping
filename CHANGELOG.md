@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Bumped dependency on JPAN to 0.4.0
   [#5](https://github.com/netsec-ethz/scion-java-multiping/pull/5)
 - Bumped dependency on JPAN to 0.4.1
-  [#5](https://github.com/netsec-ethz/scion-java-multiping/pull/5)
+  [#6](https://github.com/netsec-ethz/scion-java-multiping/pull/6)
+
 ## [0.2.0] - 2024-09-30
 
 ### Added
