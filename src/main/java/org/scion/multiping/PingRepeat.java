@@ -49,7 +49,6 @@ public class PingRepeat {
   private static final String FILE_CONFIG = "ping-repeat-config.json";
 
   private final InetSocketAddress dummyIP;
-  private final int localPort;
 
   private int nPingTried = 0;
   private int nPingSuccess = 0;
@@ -61,8 +60,7 @@ public class PingRepeat {
 
   private static final boolean SHOW_PATH = true;
 
-  public PingRepeat(int localPort) throws UnknownHostException {
-    this.localPort = localPort;
+  public PingRepeat() throws UnknownHostException {
     this.dummyIP = new InetSocketAddress(InetAddress.getByAddress(new byte[] {1, 2, 3, 4}), 12345);
   }
 
@@ -75,8 +73,7 @@ public class PingRepeat {
     // Output: ISD/AS, remote IP, time, hopCount, path, [pings]
     fileWriter = new FileWriter(config.outputFile);
 
-    // Local port must be 30041 for networks that expect a dispatcher
-    PingRepeat demo = new PingRepeat(config.localPort);
+    PingRepeat demo = new PingRepeat();
     List<ParseAssignments.HostEntry> list = ParseAssignments.getList(config.isdAsInputFile);
     for (int i = 0; i < config.roundRepeatCnt; i++) {
       Instant start = Instant.now();
@@ -164,8 +161,7 @@ public class PingRepeat {
     Record best = null;
     double currentBestMs = Double.MAX_VALUE;
     ResponseHandler handler = new ResponseHandler();
-    try (ScmpSenderAsync sender =
-        Scmp.newSenderAsyncBuilder(handler).setLocalPort(localPort).build()) {
+    try (ScmpSenderAsync sender = Scmp.newSenderAsyncBuilder(handler).build()) {
       for (int attemptCount = 0; attemptCount < config.attemptRepeatCnt; attemptCount++) {
         Instant start = Instant.now();
         Map<Integer, Record> seqToPathMap = new HashMap<>();

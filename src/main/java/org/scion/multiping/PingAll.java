@@ -49,8 +49,6 @@ public class PingAll {
     config.tryICMP = false;
   }
 
-  private final int localPort;
-
   private int nAsTried = 0;
   private int nAsSuccess = 0;
   private int nAsError = 0;
@@ -79,16 +77,11 @@ public class PingAll {
   private static final Policy POLICY = Policy.SHORTEST_TR;
   private static final boolean SHOW_PATH = true;
 
-  public PingAll(int localPort) {
-    this.localPort = localPort;
-  }
-
   public static void main(String[] args) throws IOException {
     PRINT = true;
     // System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
 
-    // Local port must be 30041 for networks that expect a dispatcher
-    PingAll demo = new PingAll(30041);
+    PingAll demo = new PingAll();
     List<ParseAssignments.HostEntry> list = DownloadAssignmentsFromWeb.getList();
     for (ParseAssignments.HostEntry e : list) {
       print(ScionUtil.toStringIA(e.getIsdAs()) + " \"" + e.getName() + "\"  ");
@@ -206,7 +199,7 @@ public class PingAll {
     Path path = PathPolicy.MIN_HOPS.filter(paths);
     refBest.set(path);
     ByteBuffer bb = ByteBuffer.allocate(0);
-    try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
+    try (ScmpSender sender = Scmp.newSenderBuilder().build()) {
       nPathTried++;
       Scmp.EchoMessage msg = sender.sendEchoRequest(path, bb);
       if (msg == null) {
@@ -233,7 +226,7 @@ public class PingAll {
   private Scmp.TracerouteMessage findShortestTR(List<Path> paths, Ref<Path> refBest) {
     Path path = PathPolicy.MIN_HOPS.filter(paths);
     refBest.set(path);
-    try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
+    try (ScmpSender sender = Scmp.newSenderBuilder().build()) {
       nPathTried++;
       List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(path);
       if (messages.isEmpty()) {
@@ -264,7 +257,7 @@ public class PingAll {
 
   private Scmp.TracerouteMessage findFastestTR(List<Path> paths, Ref<Path> refBest) {
     Scmp.TracerouteMessage best = null;
-    try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
+    try (ScmpSender sender = Scmp.newSenderBuilder().build()) {
       for (Path path : paths) {
         nPathTried++;
         List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(path);
