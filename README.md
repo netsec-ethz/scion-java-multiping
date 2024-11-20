@@ -76,7 +76,7 @@ arguments:
   "tryICMP": false,
   "isdAsInputFile": "ping-repeat-destinations.csv",
   "outputFile": "ping-repeat-output.csv",
-  "localPort": 30041,
+  "localPort": 30041, // This is only used by the PingResponder
   "consoleOutput": true
 }
 ```

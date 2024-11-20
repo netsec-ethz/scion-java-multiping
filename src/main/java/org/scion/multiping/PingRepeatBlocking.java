@@ -49,8 +49,6 @@ import org.scion.multiping.util.Record;
 public class PingRepeatBlocking {
   private static final String FILE_CONFIG = "ping-repeat-config.json";
 
-  private final int localPort;
-
   private int nAsTried = 0;
   private int nAsSuccess = 0;
   private int nAsError = 0;
@@ -80,10 +78,6 @@ public class PingRepeatBlocking {
   private static final Policy POLICY = Policy.FASTEST_TR;
   private static final boolean SHOW_PATH = true;
 
-  public PingRepeatBlocking(int localPort) {
-    this.localPort = localPort;
-  }
-
   public static void main(String[] args) throws IOException {
     // System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
 
@@ -93,8 +87,7 @@ public class PingRepeatBlocking {
     // Output: ISD/AS, remote IP, time, hopCount, path, [pings]
     fileWriter = new FileWriter(config.outputFile);
 
-    // Local port must be 30041 for networks that expect a dispatcher
-    PingRepeatBlocking demo = new PingRepeatBlocking(config.localPort);
+    PingRepeatBlocking demo = new PingRepeatBlocking();
     List<ParseAssignments.HostEntry> list = ParseAssignments.getList(config.isdAsInputFile);
     for (int i = 0; i < config.roundRepeatCnt; i++) {
       Instant start = Instant.now();
@@ -210,7 +203,7 @@ public class PingRepeatBlocking {
     Path path = PathPolicy.MIN_HOPS.filter(paths);
     refBest.set(path);
     ByteBuffer bb = ByteBuffer.allocate(0);
-    try (ScmpSender scmpChannel = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
+    try (ScmpSender scmpChannel = Scmp.newSenderBuilder().build()) {
       nPathTried++;
       Scmp.EchoMessage msg = scmpChannel.sendEchoRequest(path, bb);
       if (msg == null) {
@@ -237,7 +230,7 @@ public class PingRepeatBlocking {
   private Scmp.TracerouteMessage findShortestTR(List<Path> paths, Ref<Path> refBest) {
     Path path = PathPolicy.MIN_HOPS.filter(paths);
     refBest.set(path);
-    try (ScmpSender scmpChannel = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
+    try (ScmpSender scmpChannel = Scmp.newSenderBuilder().build()) {
       nPathTried++;
       List<Scmp.TracerouteMessage> messages = scmpChannel.sendTracerouteRequest(path);
       if (messages.isEmpty()) {
@@ -264,7 +257,7 @@ public class PingRepeatBlocking {
 
   private Scmp.TracerouteMessage findFastestTR(List<Path> paths, Ref<Path> refBest) {
     Scmp.TracerouteMessage best = null;
-    try (ScmpSender scmpChannel = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
+    try (ScmpSender scmpChannel = Scmp.newSenderBuilder().build()) {
       for (int i = 0; i < paths.size() && i < config.maxPathsPerDestination; i++) {
         Path path = paths.get(i);
         nPathTried++;
