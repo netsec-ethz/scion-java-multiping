@@ -8,6 +8,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+- Nothing yet
+
+## [0.3.0] - 2024-11-22
+
 - Changed JPAN dependency to 0.3.0.
   [#3](https://github.com/netsec-ethz/scion-java-multiping/pull/3)
 - Regression: fixed pom.xml
