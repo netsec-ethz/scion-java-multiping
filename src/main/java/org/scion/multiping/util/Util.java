@@ -17,6 +17,8 @@ package org.scion.multiping.util;
 public class Util {
 
   public static boolean PRINT = true;
+  public static boolean DELAYED_PRINT = false; // print only at newlines
+  private static final StringBuilder sb = new StringBuilder();
 
   public static void sleep(long millis) {
     try {
@@ -29,14 +31,31 @@ public class Util {
 
   public static void print(String msg) {
     if (PRINT) {
-      System.out.print(msg);
+      if (DELAYED_PRINT) {
+        sb.append(msg);
+      } else {
+        System.out.print(msg);
+      }
     }
   }
 
   public static void println(String msg) {
+    print(msg);
+  }
+
+  public static void println() {
     if (PRINT) {
-      System.out.println(msg);
+      if (DELAYED_PRINT) {
+        System.out.println(sb);
+        sb.setLength(0);
+      } else {
+        System.out.println();
+      }
     }
+  }
+
+  public static void clearPrintQueue() {
+    sb.setLength(0);
   }
 
   public static double round(double d, int nDigits) {

@@ -43,10 +43,15 @@ import org.scion.multiping.util.*;
  * all available paths before it can report on the best path.
  */
 public class PingAll {
+  private static final int REPEAT = 3;
+  private static final boolean SHOW_ONLY_ICMP = !true;
   private static final Config config = new Config();
 
   static {
-    config.tryICMP = false;
+    config.tryICMP = !false;
+    if (SHOW_ONLY_ICMP) {
+      DELAYED_PRINT = true;
+    }
   }
 
   private int nAsTried = 0;
@@ -74,8 +79,8 @@ public class PingAll {
     SHORTEST_ECHO
   }
 
-  private static final Policy POLICY = Policy.SHORTEST_TR;
-  private static final boolean SHOW_PATH = true;
+  private static final Policy POLICY = Policy.FASTEST_TR; // SHORTEST_TR;
+  private static final boolean SHOW_PATH = !true;
 
   public static void main(String[] args) throws IOException {
     PRINT = true;
@@ -134,48 +139,73 @@ public class PingAll {
     InetSocketAddress destinationAddress =
         new InetSocketAddress(InetAddress.getByAddress(new byte[] {1, 2, 3, 4}), 12345);
     int nPaths;
-    Scmp.TimedMessage msg;
+    Scmp.TimedMessage[] msg = new Scmp.TimedMessage[REPEAT];
     Ref<Path> bestPath = Ref.empty();
     try {
       List<Path> paths = service.getPaths(remote.getIsdAs(), destinationAddress);
       if (paths.isEmpty()) {
         String src = ScionUtil.toStringIA(service.getLocalIsdAs());
         String dst = ScionUtil.toStringIA(remote.getIsdAs());
-        println("WARNING: No path found from " + src + " to " + dst);
+        if (!SHOW_ONLY_ICMP) {
+          println("WARNING: No path found from " + src + " to " + dst);
+        }
         nAsNoPathFound++;
         results.add(new Result(remote, Result.State.NO_PATH));
         return;
       }
       nPaths = paths.size();
-      msg = findPaths(paths, bestPath);
+      msg[0] = findPaths(paths, bestPath);
+      if (msg[0] != null && REPEAT > 1) {
+        try (ScmpSender sender = Scmp.newSenderBuilder().build()) {
+          for (int i = 1; i < msg.length; i++) {
+            List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(bestPath.get());
+            msg[i] = messages.get(messages.size() - 1);
+          }
+        }
+      }
     } catch (ScionRuntimeException e) {
       println("ERROR: " + e.getMessage());
       nAsError++;
       results.add(new Result(remote, Result.State.ERROR));
       return;
     }
-    Result result = new Result(remote, msg, bestPath.get(), nPaths);
+    Result result = new Result(remote, msg[0], bestPath.get(), nPaths);
     results.add(result);
 
-    if (msg == null) {
+    if (msg[0] == null) {
       return;
     }
 
     // ICMP ping
-    String icmpMs = ICMP.pingICMP(msg.getPath().getRemoteAddress(), config);
-    result.setICMP(icmpMs);
+    StringBuilder icmpMs = new StringBuilder();
+    for (int i = 0; i < REPEAT; i++) {
+      String icmpMsStr = ICMP.pingICMP(msg[0].getPath().getRemoteAddress(), config);
+      icmpMs.append(icmpMsStr).append(" ");
+      if (icmpMsStr.startsWith("TIMEOUT") || icmpMsStr.startsWith("N/A")) {
+        break;
+      }
+    }
+    result.setICMP(icmpMs.toString());
 
     // output
-    double millis = round(msg.getNanoSeconds() / (double) 1_000_000, 2);
-    int nHops = PathRawParser.create(msg.getPath().getRawPath()).getHopCount();
-    String addr = msg.getPath().getRemoteAddress().getHostAddress();
-    String out = addr + "  nPaths=" + nPaths + "  nHops=" + nHops;
-    out += "  time=" + millis + "ms" + "  ICMP=" + icmpMs;
-    if (SHOW_PATH) {
-      out += "  " + ScionUtil.toStringPath(bestPath.get().getMetadata());
+    int nHops = PathRawParser.create(msg[0].getPath().getRawPath()).getHopCount();
+    String addr = msg[0].getPath().getRemoteAddress().getHostAddress();
+    print(addr + "  nPaths=" + nPaths + "  nHops=" + nHops + "  time= ");
+    for (Scmp.TimedMessage m : msg) {
+      double millis = round(m.getNanoSeconds() / (double) 1_000_000, 2);
+      print(millis + "ms ");
     }
-    println(out);
-    if (msg.isTimedOut()) {
+    String icmpStr = icmpMs.toString();
+    print("  ICMP= " + icmpStr);
+    if (SHOW_PATH) {
+      print("  " + ScionUtil.toStringPath(bestPath.get().getMetadata()));
+    }
+    if (SHOW_ONLY_ICMP && (icmpStr.startsWith("N/A") || icmpStr.startsWith("TIMEOUT"))) {
+      clearPrintQueue();
+    } else {
+      println();
+    }
+    if (msg[0].isTimedOut()) {
       nAsTimeout++;
     } else {
       nAsSuccess++;
