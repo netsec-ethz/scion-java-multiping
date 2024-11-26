@@ -21,6 +21,8 @@ import com.google.common.util.concurrent.AtomicDouble;
 import com.zaxxer.ping.IcmpPinger;
 import com.zaxxer.ping.PingResponseHandler;
 import com.zaxxer.ping.PingTarget;
+import java.net.Inet4Address;
+import java.net.Inet6Address;
 import java.net.InetAddress;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,15 +37,23 @@ public class ICMP {
       return "OFF";
     }
     String ipStr = address.getHostAddress();
-    if (ipStr.startsWith("127.") || ipStr.startsWith("192.168.") || ipStr.startsWith("10.")) {
-      return "N/A";
-    }
-    if (ipStr.startsWith("172.")) {
-      String[] split = ipStr.split("\\.");
-      int part2 = Integer.parseInt(split[1]);
-      if (part2 >= 16 && part2 < 31) {
+    if (address instanceof Inet4Address) {
+      if (ipStr.startsWith("127.")
+          || ipStr.startsWith("192.168.")
+          || ipStr.startsWith("10.")
+          || ipStr.startsWith("169.254.")) {
         return "N/A";
       }
+      if (ipStr.startsWith("172.")) {
+        String[] split = ipStr.split("\\.");
+        int part2 = Integer.parseInt(split[1]);
+        if (part2 >= 16 && part2 < 31) {
+          return "N/A";
+        }
+      }
+    }
+    if (address instanceof Inet6Address && ipStr.startsWith("fd")) {
+      return "N/A";
     }
 
     AtomicDouble seconds = new AtomicDouble(-2);
