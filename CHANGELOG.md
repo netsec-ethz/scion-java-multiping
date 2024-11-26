@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+- REPEAT setting in PingAll + some output cleanup
+  [#9](https://github.com/netsec-ethz/scion-java-multiping/pull/9)
+
 ### Changed
 
 - Post 0.3.0 release updates
