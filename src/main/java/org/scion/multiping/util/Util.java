@@ -41,6 +41,7 @@ public class Util {
 
   public static void println(String msg) {
     print(msg);
+    println();
   }
 
   public static void println() {

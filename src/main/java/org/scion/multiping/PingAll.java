@@ -44,11 +44,11 @@ import org.scion.multiping.util.*;
  */
 public class PingAll {
   private static final int REPEAT = 3;
-  private static final boolean SHOW_ONLY_ICMP = !true;
+  private static final boolean SHOW_ONLY_ICMP = false;
   private static final Config config = new Config();
 
   static {
-    config.tryICMP = !false;
+    config.tryICMP = false;
     if (SHOW_ONLY_ICMP) {
       DELAYED_PRINT = true;
     }
@@ -79,12 +79,17 @@ public class PingAll {
     SHORTEST_ECHO
   }
 
-  private static final Policy POLICY = Policy.FASTEST_TR; // SHORTEST_TR;
+  private static final Policy POLICY = Policy.SHORTEST_TR; // SHORTEST_TR;
   private static final boolean SHOW_PATH = !true;
 
   public static void main(String[] args) throws IOException {
     PRINT = true;
     // System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
+
+    println("Settings:");
+    println("  Path policy = " + POLICY);
+    println("  ICMP=" + config.tryICMP);
+    println("  printOnlyICMP=" + SHOW_ONLY_ICMP);
 
     PingAll demo = new PingAll();
     List<ParseAssignments.HostEntry> list = DownloadAssignmentsFromWeb.getList();
