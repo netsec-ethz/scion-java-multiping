@@ -70,7 +70,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Nothing
 
-[Unreleased]: https://github.com/netsec-ethz/scion-java-multiping/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/netsec-ethz/scion-java-multiping/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/netsec-ethz/scion-java-multiping/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/netsec-ethz/scion-java-multiping/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/netsec-ethz/scion-java-multiping/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/netsec-ethz/scion-java-multiping/compare/init_root_commit...v0.1.0
