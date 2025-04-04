@@ -200,7 +200,7 @@ public class PingRepeatBlocking {
   }
 
   private Scmp.EchoMessage findShortestEcho(List<Path> paths, Ref<Path> refBest) {
-    Path path = PathPolicy.MIN_HOPS.filter(paths);
+    Path path = PathPolicy.MIN_HOPS.filter(paths).get(0);
     refBest.set(path);
     ByteBuffer bb = ByteBuffer.allocate(0);
     try (ScmpSender scmpChannel = Scmp.newSenderBuilder().build()) {
@@ -228,7 +228,7 @@ public class PingRepeatBlocking {
   }
 
   private Scmp.TracerouteMessage findShortestTR(List<Path> paths, Ref<Path> refBest) {
-    Path path = PathPolicy.MIN_HOPS.filter(paths);
+    Path path = PathPolicy.MIN_HOPS.filter(paths).get(0);
     refBest.set(path);
     try (ScmpSender scmpChannel = Scmp.newSenderBuilder().build()) {
       nPathTried++;

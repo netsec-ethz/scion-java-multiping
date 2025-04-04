@@ -79,7 +79,7 @@ public class PingAll {
     SHORTEST_ECHO
   }
 
-  private static final Policy POLICY = Policy.SHORTEST_TR; // SHORTEST_TR;
+  private static final Policy POLICY = Policy.SHORTEST_TR; // Policy.FASTEST_TR; // SHORTEST_TR;
   private static final boolean SHOW_PATH = !true;
 
   public static void main(String[] args) throws IOException {
@@ -231,7 +231,7 @@ public class PingAll {
   }
 
   private Scmp.EchoMessage findShortestEcho(List<Path> paths, Ref<Path> refBest) {
-    Path path = PathPolicy.MIN_HOPS.filter(paths);
+    Path path = PathPolicy.MIN_HOPS.filter(paths).get(0);
     refBest.set(path);
     ByteBuffer bb = ByteBuffer.allocate(0);
     try (ScmpSender sender = Scmp.newSenderBuilder().build()) {
@@ -259,7 +259,7 @@ public class PingAll {
   }
 
   private Scmp.TracerouteMessage findShortestTR(List<Path> paths, Ref<Path> refBest) {
-    Path path = PathPolicy.MIN_HOPS.filter(paths);
+    Path path = PathPolicy.MIN_HOPS.filter(paths).get(0);
     refBest.set(path);
     try (ScmpSender sender = Scmp.newSenderBuilder().build()) {
       nPathTried++;
