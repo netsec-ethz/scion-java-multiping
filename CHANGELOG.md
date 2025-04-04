@@ -18,6 +18,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
   [#7](https://github.com/netsec-ethz/scion-java-multiping/pull/7)
 - ICMP fixes (ignore IPv6 private addresses)
   [#8](https://github.com/netsec-ethz/scion-java-multiping/pull/8)
+- Update to JPAN 0.5.1
+  [#11](https://github.com/netsec-ethz/scion-java-multiping/pull/11)
 
 ## [0.3.0] - 2024-11-22
 
