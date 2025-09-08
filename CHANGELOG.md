@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added async traceroute, stop SHIM, and use 30041
   [#14](https://github.com/netsec-ethz/scion-java-multiping/pull/14)
+- Added output of median and average values
+  [#15](https://github.com/netsec-ethz/scion-java-multiping/pull/15)
 
 ### Fixed
 
