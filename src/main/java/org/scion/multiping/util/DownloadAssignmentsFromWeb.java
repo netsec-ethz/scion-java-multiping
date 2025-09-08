@@ -57,13 +57,8 @@ public class DownloadAssignmentsFromWeb {
               String name = te2.child(1).getElementsByTag("td").text();
               // System.out.println(isdAs + " " + name);
               result.add(new ParseAssignments.HostEntry(ScionUtil.parseIA(isdAs), name));
-              //              for (Element bc4 : bc3.children()) {
-              //                  System.out.println("eee4 " + bc4.getElementsByTag("p").text());
-              //              }
             }
-
           }
-
         }
       }
     }
