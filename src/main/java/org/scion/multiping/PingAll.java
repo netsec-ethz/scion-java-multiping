@@ -21,6 +21,9 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.scion.jpan.*;
 import org.scion.jpan.internal.PathRawParser;
 import org.scion.multiping.util.*;
@@ -47,6 +50,9 @@ public class PingAll {
   private static final boolean SHOW_ONLY_ICMP = false;
   private static final Config config = new Config();
 
+  private static final int localPort = 30041;
+  private static final boolean STOP_SHIM = true;
+
   static {
     config.tryICMP = false;
     if (SHOW_ONLY_ICMP) {
@@ -71,20 +77,22 @@ public class PingAll {
   private enum Policy {
     /** Fastest path using SCMP traceroute */
     FASTEST_TR,
+    /** Fastest path using SCMP async traceroute */
+    FASTEST_ECHO,
+    FASTEST_TR_ASYNC,
     /** Shortest path using SCMP traceroute */
     SHORTEST_TR,
-    /** Fastest path using SCMP echo */
-    FASTEST_ECHO,
     /** Fastest path using SCMP echo */
     SHORTEST_ECHO
   }
 
-  private static final Policy POLICY = Policy.SHORTEST_TR; // Policy.FASTEST_TR; // SHORTEST_TR;
+  private static final Policy POLICY = Policy.FASTEST_TR_ASYNC;
   private static final boolean SHOW_PATH = !true;
 
   public static void main(String[] args) throws IOException {
     PRINT = true;
     // System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
+    System.setProperty(Constants.PROPERTY_SHIM, STOP_SHIM ? "false" : "true"); // disable SHIM
 
     println("Settings:");
     println("  Path policy = " + POLICY);
@@ -142,7 +150,7 @@ public class PingAll {
     ScionService service = Scion.defaultService();
     // Dummy address. The traceroute will contact the control service IP instead.
     InetSocketAddress destinationAddress =
-        new InetSocketAddress(InetAddress.getByAddress(new byte[] {1, 2, 3, 4}), 12345);
+        new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 30041);
     int nPaths;
     Scmp.TimedMessage[] msg = new Scmp.TimedMessage[REPEAT];
     Ref<Path> bestPath = Ref.empty();
@@ -161,7 +169,7 @@ public class PingAll {
       nPaths = paths.size();
       msg[0] = findPaths(paths, bestPath);
       if (msg[0] != null && REPEAT > 1) {
-        try (ScmpSender sender = Scmp.newSenderBuilder().build()) {
+        try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
           for (int i = 1; i < msg.length; i++) {
             List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(bestPath.get());
             msg[i] = messages.get(messages.size() - 1);
@@ -221,6 +229,8 @@ public class PingAll {
     switch (POLICY) {
       case FASTEST_TR:
         return findFastestTR(paths, bestOut);
+      case FASTEST_TR_ASYNC:
+        return findFastestTRasync(paths, bestOut);
       case SHORTEST_TR:
         return findShortestTR(paths, bestOut);
       case SHORTEST_ECHO:
@@ -234,7 +244,7 @@ public class PingAll {
     Path path = PathPolicy.MIN_HOPS.filter(paths).get(0);
     refBest.set(path);
     ByteBuffer bb = ByteBuffer.allocate(0);
-    try (ScmpSender sender = Scmp.newSenderBuilder().build()) {
+    try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
       nPathTried++;
       Scmp.EchoMessage msg = sender.sendEchoRequest(path, bb);
       if (msg == null) {
@@ -261,7 +271,7 @@ public class PingAll {
   private Scmp.TracerouteMessage findShortestTR(List<Path> paths, Ref<Path> refBest) {
     Path path = PathPolicy.MIN_HOPS.filter(paths).get(0);
     refBest.set(path);
-    try (ScmpSender sender = Scmp.newSenderBuilder().build()) {
+    try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
       nPathTried++;
       List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(path);
       if (messages.isEmpty()) {
@@ -292,7 +302,7 @@ public class PingAll {
 
   private Scmp.TracerouteMessage findFastestTR(List<Path> paths, Ref<Path> refBest) {
     Scmp.TracerouteMessage best = null;
-    try (ScmpSender sender = Scmp.newSenderBuilder().build()) {
+    try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
       for (Path path : paths) {
         nPathTried++;
         List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(path);
@@ -326,5 +336,85 @@ public class PingAll {
       nAsError++;
       return null;
     }
+  }
+
+  private Scmp.TracerouteMessage findFastestTRasync(List<Path> paths, Ref<Path> refBest) {
+    ConcurrentHashMap<Integer, Scmp.TimedMessage> messages = new ConcurrentHashMap<>();
+    CountDownLatch barrier = new CountDownLatch(paths.size());
+    ScmpSenderAsync.ResponseHandler handler =
+        new ScmpSenderAsync.ResponseHandler() {
+          @Override
+          public void onResponse(Scmp.TimedMessage msg) {
+            barrier.countDown();
+            messages.put(msg.getIdentifier(), msg);
+          }
+
+          @Override
+          public void onTimeout(Scmp.TimedMessage msg) {
+            barrier.countDown();
+            messages.put(msg.getIdentifier(), msg);
+          }
+
+          @Override
+          public void onError(Scmp.ErrorMessage msg) {
+            barrier.countDown();
+          }
+
+          @Override
+          public void onException(Throwable t) {
+            barrier.countDown();
+          }
+        };
+
+    Scmp.TracerouteMessage best = null;
+    try (ScmpSenderAsync sender =
+        Scmp.newSenderAsyncBuilder(handler).setLocalPort(localPort).build()) {
+      for (Path path : paths) {
+        nPathTried++;
+        int id = sender.sendTracerouteLast(path);
+        if (id == -1) {
+          println(" -> local AS, no timing available");
+          nPathSuccess++;
+          nAsSuccess++;
+          return null;
+        }
+      }
+
+    // Wait for all messages to be received
+    try {
+      if (!barrier.await(1100, TimeUnit.MILLISECONDS)) {
+        throw new IllegalStateException("Missing messages: " + barrier.getCount() + "/" + paths.size());
+      }
+    } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IllegalStateException(e);
+    }
+
+    } catch (IOException e) {
+      println("ERROR: " + e.getMessage());
+      nAsError++;
+      return null;
+    }
+
+    for (Scmp.TimedMessage tm : messages.values()) {
+      Scmp.TracerouteMessage msg = (Scmp.TracerouteMessage) tm;
+      seenAs.add(msg.getIsdAs());
+
+      if (msg.isTimedOut()) {
+        nPathTimeout++;
+        if (best == null) {
+          best = msg;
+        }
+        continue;
+      }
+
+      nPathSuccess++;
+
+      if (best == null || msg.getNanoSeconds() < best.getNanoSeconds()) {
+        best = msg;
+        refBest.set(msg.getRequest().getPath());
+      }
+    }
+    return best;
   }
 }
