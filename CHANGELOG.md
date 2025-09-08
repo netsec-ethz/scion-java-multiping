@@ -7,14 +7,20 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+### Added
+
+- Added async traceroute, stop SHIM, and use 30041
+  [#14](https://github.com/netsec-ethz/scion-java-multiping/pull/14)
+
 ### Fixed
 
 - ISD-AS assignment parser broken after website change
-  [#12](https://github.com/netsec-ethz/scion-java-multiping/pull/12)
+  [#13](https://github.com/netsec-ethz/scion-java-multiping/pull/13)
 
 ## [0.4.0] - 2025-04-04
 
 ### Added
+
 - REPEAT setting in PingAll + some output cleanup
   [#9](https://github.com/netsec-ethz/scion-java-multiping/pull/9),
   [#10](https://github.com/netsec-ethz/scion-java-multiping/pull/10)
