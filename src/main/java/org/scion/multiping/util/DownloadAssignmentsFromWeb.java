@@ -17,6 +17,7 @@ package org.scion.multiping.util;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -24,7 +25,7 @@ import org.scion.jpan.ScionUtil;
 
 public class DownloadAssignmentsFromWeb {
   private static final String HTTPS_URL =
-      "https://docs.anapaya.net/en/latest/resources/isd-as-assignments/";
+          "https://docs.anapaya.net/en/latest/resources/isd-as-assignments/";
 
   public static void main(String[] args) throws IOException {
     new DownloadAssignmentsFromWeb().jsoup();
@@ -42,22 +43,26 @@ public class DownloadAssignmentsFromWeb {
   public List<ParseAssignments.HostEntry> jsoup() throws IOException {
     List<ParseAssignments.HostEntry> result = new ArrayList<>(100);
     Document doc = Jsoup.connect(HTTPS_URL).get();
-    for (Element bc : doc.body().getElementsByAttributeValue("id", "isd-membership")) {
-      // System.out.println("eee " + bc);
-      for (Element bc2 : bc.getElementsByTag("tbody")) {
-        // System.out.println("eee2 " + bc2);
-        for (Element bc3 : bc2.children()) {
-          // System.out.println("eee3 " + bc3);
-          String isdAs = bc3.child(0).getElementsByTag("p").text();
-          String name = bc3.child(1).getElementsByTag("p").text();
-          // System.out.println(isdAs + " " + name);
-          result.add(new ParseAssignments.HostEntry(ScionUtil.parseIA(isdAs), name));
-          //                    for (Element bc4 : bc3.children()) {
-          //                        System.out.println("eee4 " + bc4.getElementsByTag("p").text());
-          //                    }
+
+    for (Element table : doc.getElementsByTag("table")) {
+      for (Element isd_as : table.getElementsContainingText("ISD-AS")) {
+        if ("table".equals(isd_as.tagName())) {
+          for (Element te : table.children()) {
+            if ("thead".equals(te.tagName())) {
+              continue;
+            }
+            for (Element te2 : te.children()) {
+              // System.out.println("     te3: " + te2.tag());
+              String isdAs = te2.child(0).getElementsByTag("td").text();
+              String name = te2.child(1).getElementsByTag("td").text();
+              // System.out.println(isdAs + " " + name);
+              result.add(new ParseAssignments.HostEntry(ScionUtil.parseIA(isdAs), name));
+            }
+          }
         }
       }
     }
+
     return result;
   }
 }

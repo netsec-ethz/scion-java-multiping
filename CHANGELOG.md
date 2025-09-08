@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
-- Nothing yet
+### Fixed
+
+- ISD-AS assignment parser broken after website change
+  [#12](https://github.com/netsec-ethz/scion-java-multiping/pull/12)
 
 ## [0.4.0] - 2025-04-04
 
