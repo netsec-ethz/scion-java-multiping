@@ -24,8 +24,10 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
-
 import org.scion.jpan.*;
 import org.scion.jpan.internal.PathRawParser;
 import org.scion.multiping.util.*;
@@ -89,7 +91,7 @@ public class PingAll {
   }
 
   private static final Policy POLICY = Policy.FASTEST_TR_ASYNC;
-  private static final boolean SHOW_PATH = !true;
+  private static final boolean SHOW_PATH = false;
 
   public static void main(String[] args) throws IOException {
     PRINT = true;
@@ -124,18 +126,12 @@ public class PingAll {
     Result maxPaths = results.stream().max(Comparator.comparingInt(Result::getPathCount)).get();
 
     // avg/median:
-    double avgPing =
-        results.stream().filter(Result::isSuccess).mapToDouble(Result::getPingMs).average().orElse(-1);
-    double avgHops =
-        results.stream().filter(r -> r.getHopCount() > 0).mapToInt(Result::getHopCount).average().orElse(-1);
-    double avgPaths =
-        results.stream().filter(r -> r.getPathCount() > 0).mapToInt(Result::getPathCount).average().orElse(-1);
-    List<Double> pings = results.stream().filter(Result::isSuccess).map(Result::getPingMs).sorted().collect(Collectors.toList());
-    double medianPing = pings.isEmpty() ? -1 : pings.get(pings.size() / 2);
-    List<Integer> hops = results.stream().map(Result::getHopCount).filter(hopCount -> hopCount > 0).sorted().collect(Collectors.toList());
-    int medianHops = hops.isEmpty() ? -1 : hops.get(hops.size() / 2);
-    List<Integer> paths = results.stream().map(Result::getPathCount).filter(pathCount -> pathCount > 0).sorted().collect(Collectors.toList());
-    int medianPaths = paths.isEmpty() ? -1 : paths.get(paths.size() / 2);
+    double avgPing = avg(results, Result::isSuccess, Result::getPingMs);
+    double avgHops = avg(results, r -> r.getHopCount() > 0, Result::getHopCount);
+    double avgPaths = avg(results, r -> r.getPathCount() > 0, Result::getPathCount);
+    double medianPing = median(results, Result::isSuccess, Result::getPingMs).orElse(-1.0);
+    int medianHops = median(results, r -> r.getHopCount() > 0, Result::getHopCount).orElse(-1);
+    int medianPaths = median(results, r -> r.getPathCount() > 0, Result::getPathCount).orElse(-1);
 
     println("");
     println("Max hops         = " + maxHops.getHopCount() + ":    " + maxHops);
@@ -404,15 +400,16 @@ public class PingAll {
         }
       }
 
-    // Wait for all messages to be received
-    try {
-      if (!barrier.await(1100, TimeUnit.MILLISECONDS)) {
-        throw new IllegalStateException("Missing messages: " + barrier.getCount() + "/" + paths.size());
-      }
-    } catch (InterruptedException e) {
+      // Wait for all messages to be received
+      try {
+        if (!barrier.await(1100, TimeUnit.MILLISECONDS)) {
+          throw new IllegalStateException(
+              "Missing messages: " + barrier.getCount() + "/" + paths.size());
+        }
+      } catch (InterruptedException e) {
         Thread.currentThread().interrupt();
         throw new IllegalStateException(e);
-    }
+      }
 
     } catch (IOException e) {
       println("ERROR: " + e.getMessage());
@@ -440,5 +437,16 @@ public class PingAll {
       }
     }
     return best;
+  }
+
+  private static double avg(
+      List<Result> list, Predicate<Result> filter, ToDoubleFunction<Result> mapper) {
+    return list.stream().filter(filter).mapToDouble(mapper).average().orElse(-1);
+  }
+
+  private static <T> Optional<T> median(
+      List<Result> list, Predicate<Result> filter, Function<Result, T> mapper) {
+    List<T> list2 = list.stream().filter(filter).map(mapper).sorted().collect(Collectors.toList());
+    return list2.isEmpty() ? Optional.empty() : Optional.of(list2.get(list2.size() / 2));
   }
 }

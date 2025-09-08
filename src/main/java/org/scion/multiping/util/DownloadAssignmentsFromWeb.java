@@ -17,7 +17,6 @@ package org.scion.multiping.util;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -25,7 +24,7 @@ import org.scion.jpan.ScionUtil;
 
 public class DownloadAssignmentsFromWeb {
   private static final String HTTPS_URL =
-          "https://docs.anapaya.net/en/latest/resources/isd-as-assignments/";
+      "https://docs.anapaya.net/en/latest/resources/isd-as-assignments/";
 
   public static void main(String[] args) throws IOException {
     new DownloadAssignmentsFromWeb().jsoup();
