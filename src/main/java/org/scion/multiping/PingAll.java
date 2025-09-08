@@ -24,6 +24,8 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
+
 import org.scion.jpan.*;
 import org.scion.jpan.internal.PathRawParser;
 import org.scion.multiping.util.*;
@@ -121,10 +123,32 @@ public class PingAll {
     Result maxHops = results.stream().max(Comparator.comparingInt(Result::getHopCount)).get();
     Result maxPaths = results.stream().max(Comparator.comparingInt(Result::getPathCount)).get();
 
+    // avg/median:
+    double avgPing =
+        results.stream().filter(Result::isSuccess).mapToDouble(Result::getPingMs).average().orElse(-1);
+    double avgHops =
+        results.stream().filter(r -> r.getHopCount() > 0).mapToInt(Result::getHopCount).average().orElse(-1);
+    double avgPaths =
+        results.stream().filter(r -> r.getPathCount() > 0).mapToInt(Result::getPathCount).average().orElse(-1);
+    List<Double> pings = results.stream().filter(Result::isSuccess).map(Result::getPingMs).sorted().collect(Collectors.toList());
+    double medianPing = pings.isEmpty() ? -1 : pings.get(pings.size() / 2);
+    List<Integer> hops = results.stream().map(Result::getHopCount).filter(hopCount -> hopCount > 0).sorted().collect(Collectors.toList());
+    int medianHops = hops.isEmpty() ? -1 : hops.get(hops.size() / 2);
+    List<Integer> paths = results.stream().map(Result::getPathCount).filter(pathCount -> pathCount > 0).sorted().collect(Collectors.toList());
+    int medianPaths = paths.isEmpty() ? -1 : paths.get(paths.size() / 2);
+
     println("");
-    println("Max hops  = " + maxHops.getHopCount() + ":    " + maxHops);
-    println("Max ping  = " + round(maxPing.getPingMs(), 2) + "ms:    " + maxPing);
-    println("Max paths = " + maxPaths.getPathCount() + ":    " + maxPaths);
+    println("Max hops         = " + maxHops.getHopCount() + ":    " + maxHops);
+    println("Max ping [ms]    = " + round(maxPing.getPingMs(), 2) + ":    " + maxPing);
+    println("Max paths        = " + maxPaths.getPathCount() + ":    " + maxPaths);
+
+    println("Median hops      = " + medianHops);
+    println("Median ping [ms] = " + round(medianPing, 2));
+    println("Median paths     = " + medianPaths);
+
+    println("Avg hops         = " + round(avgHops, 1));
+    println("Avg ping [ms]    = " + round(avgPing, 2));
+    println("Avg paths        = " + (int) round(avgPaths, 0));
 
     println("");
     println("AS Stats:");

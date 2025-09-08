@@ -91,6 +91,10 @@ public class Result {
     return pingMs;
   }
 
+  public boolean isSuccess() {
+    return state == State.SUCCESS;
+  }
+
   @Override
   public String toString() {
     String out = ScionUtil.toStringIA(isdAs) + " " + name;
