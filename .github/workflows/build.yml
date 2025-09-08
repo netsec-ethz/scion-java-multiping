@@ -85,10 +85,6 @@ jobs:
         with:
           java-version: 17
           distribution: 'temurin'
-      - name: Enable 127.0.0.x addresses
-        run: |
-          chmod +x ./config/enable-macos-loopback.sh
-          ./config/enable-macos-loopback.sh
       - name: Build with Maven
         timeout-minutes: ${{ fromJSON(env.time) }}
         run: mvn --batch-mode --update-snapshots install
