@@ -1,0 +1,90 @@
+name: Java
+
+on: [push]
+
+env:
+  time: 3
+  time_windows: 5
+
+jobs:
+  format-check:
+    name: Check Code Formatting
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+      - name: Check Format
+        run: |
+          mvn --batch-mode -Pverify-format clean compile
+        shell: 'bash'
+
+  codecov:
+    name: Codecov
+    continue-on-error: true
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 21
+          distribution: 'temurin'
+#      - name: Install dependencies
+#        run: mvn install -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+      - name: Run tests and collect coverage
+        timeout-minutes: ${{ fromJSON(env.time) }}
+        run: mvn -B test
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # run different builds with the listed java versions
+        java: [ 8, 21 ]
+    name: "build-ubuntu Java ${{ matrix.java }}"
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: 'temurin'
+      - name: Build with Maven
+        timeout-minutes: ${{ fromJSON(env.time) }}
+        run: mvn --batch-mode --update-snapshots install
+
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 8
+          distribution: 'temurin'
+      - name: Build with Maven
+        timeout-minutes: ${{ fromJSON(env.time_windows) }}
+        run: mvn --batch-mode --update-snapshots install
+
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          java-version: 17
+          distribution: 'temurin'
+      - name: Build with Maven
+        timeout-minutes: ${{ fromJSON(env.time) }}
+        run: mvn --batch-mode --update-snapshots install
