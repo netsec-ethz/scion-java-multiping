@@ -6,14 +6,14 @@
 
     <groupId>org.scion</groupId>
     <artifactId>scion-multiping</artifactId>
-    <version>0.4.1-SNAPSHOT</version>
+    <version>0.5.0</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <scion.slf4j.version>2.0.9</scion.slf4j.version>
+        <scion.slf4j.version>2.0.16</scion.slf4j.version>
         <scion.fmt-maven.version>2.23</scion.fmt-maven.version>
-        <scion.maven-enforcer-plugin.version>3.3.0</scion.maven-enforcer-plugin.version>
+        <scion.maven-enforcer-plugin.version>3.5.0</scion.maven-enforcer-plugin.version>
     </properties>
 
     <name>SCION Java API Examples</name>
@@ -77,7 +77,7 @@
         <dependency>
             <groupId>com.google.googlejavaformat</groupId>
             <artifactId>google-java-format</artifactId>
-            <version>1.24.0</version>
+            <version>1.26.0</version>
         </dependency>
 
         <dependency>
@@ -101,7 +101,7 @@
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.11.0</version>
+            <version>2.13.1</version>
         </dependency>
     </dependencies>
 
@@ -109,7 +109,7 @@
         <plugins>
             <plugin>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.11.0</version>
+                <version>3.13.0</version>
                 <configuration>
                     <source>1.8</source>
                     <target>1.8</target>
@@ -118,7 +118,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>3.3.0</version>
+                <version>3.6.0</version>
                 <executions>
                     <execution>
                         <id>validate</id>
@@ -141,7 +141,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.2.5</version>
+                <version>3.5.2</version>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
