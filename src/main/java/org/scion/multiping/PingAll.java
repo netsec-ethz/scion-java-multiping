@@ -103,9 +103,13 @@ public class PingAll {
     println("  ICMP=" + config.tryICMP);
     println("  printOnlyICMP=" + SHOW_ONLY_ICMP);
 
+    long localAS = Scion.defaultService().getLocalIsdAs();
     PingAll demo = new PingAll();
     List<ParseAssignments.HostEntry> list = DownloadAssignmentsFromWeb.getList();
     for (ParseAssignments.HostEntry e : list) {
+      if (e.getIsdAs() == localAS) {
+        continue;
+      }
       print(ScionUtil.toStringIA(e.getIsdAs()) + " \"" + e.getName() + "\"  ");
       demo.runDemo(e);
       listedAs.add(e.getIsdAs());
@@ -120,27 +124,26 @@ public class PingAll {
     }
 
     // max:
-    Result maxPing =
-        results.stream().max((o1, o2) -> (int) (o1.getPingMs() - o2.getPingMs())).get();
-    Result maxHops = results.stream().max(Comparator.comparingInt(Result::getHopCount)).get();
-    Result maxPaths = results.stream().max(Comparator.comparingInt(Result::getPathCount)).get();
+    Result maxPing = max(Result::isSuccess, (o1, o2) -> (int) (o1.getPingMs() - o2.getPingMs()));
+    Result maxHops = max(r -> r.getHopCount() > 0, Comparator.comparingInt(Result::getHopCount));
+    Result maxPaths = max(r -> r.getPathCount() > 0, Comparator.comparingInt(Result::getPathCount));
 
     // avg/median:
-    double avgPing = avg(results, Result::isSuccess, Result::getPingMs);
-    double avgHops = avg(results, r -> r.getHopCount() > 0, Result::getHopCount);
-    double avgPaths = avg(results, r -> r.getPathCount() > 0, Result::getPathCount);
-    double medianPing = median(results, Result::isSuccess, Result::getPingMs).orElse(-1.0);
-    int medianHops = median(results, r -> r.getHopCount() > 0, Result::getHopCount).orElse(-1);
-    int medianPaths = median(results, r -> r.getPathCount() > 0, Result::getPathCount).orElse(-1);
+    double avgPing = avg(Result::isSuccess, Result::getPingMs);
+    double avgHops = avg(r -> r.getHopCount() > 0, Result::getHopCount);
+    double avgPaths = avg(r -> r.getPathCount() > 0, Result::getPathCount);
+    double medianPing = median(Result::isSuccess, Result::getPingMs);
+    double medianHops = median(r -> r.getHopCount() > 0, Result::getHopCount);
+    double medianPaths = median(r -> r.getPathCount() > 0, Result::getPathCount);
 
     println("");
     println("Max hops         = " + maxHops.getHopCount() + ":    " + maxHops);
     println("Max ping [ms]    = " + round(maxPing.getPingMs(), 2) + ":    " + maxPing);
     println("Max paths        = " + maxPaths.getPathCount() + ":    " + maxPaths);
 
-    println("Median hops      = " + medianHops);
+    println("Median hops      = " + (int) medianHops);
     println("Median ping [ms] = " + round(medianPing, 2));
-    println("Median paths     = " + medianPaths);
+    println("Median paths     = " + (int) medianPaths);
 
     println("Avg hops         = " + round(avgHops, 1));
     println("Avg ping [ms]    = " + round(avgPing, 2));
@@ -439,14 +442,23 @@ public class PingAll {
     return best;
   }
 
-  private static double avg(
-      List<Result> list, Predicate<Result> filter, ToDoubleFunction<Result> mapper) {
-    return list.stream().filter(filter).mapToDouble(mapper).average().orElse(-1);
+  private static double avg(Predicate<Result> filter, ToDoubleFunction<Result> mapper) {
+    return results.stream().filter(filter).mapToDouble(mapper).average().orElse(-1);
   }
 
-  private static <T> Optional<T> median(
-      List<Result> list, Predicate<Result> filter, Function<Result, T> mapper) {
-    List<T> list2 = list.stream().filter(filter).map(mapper).sorted().collect(Collectors.toList());
-    return list2.isEmpty() ? Optional.empty() : Optional.of(list2.get(list2.size() / 2));
+
+  private static Result max(Predicate<Result> filter, Comparator<Result> comparator) {
+    return results.stream().filter(filter).max(comparator).orElseThrow(NoSuchElementException::new);
+  }
+
+  private static <T> double median(Predicate<Result> filter, Function<Result, T> mapper) {
+    List<T> list = results.stream().filter(filter).map(mapper).sorted().collect(Collectors.toList());
+    if (list.isEmpty()) {
+      return -1;
+    }
+    if (list.get(0) instanceof Double) {
+      return (Double) list.get(list.size() / 2);
+    }
+    return (Integer) list.get(list.size() / 2);
   }
 }
