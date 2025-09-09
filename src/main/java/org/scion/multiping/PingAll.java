@@ -103,13 +103,13 @@ public class PingAll {
     println("  ICMP=" + config.tryICMP);
     println("  printOnlyICMP=" + SHOW_ONLY_ICMP);
 
-    long localAS = Scion.defaultService().getLocalIsdAs();
     PingAll demo = new PingAll();
-    List<ParseAssignments.HostEntry> list = DownloadAssignmentsFromWeb.getList();
-    for (ParseAssignments.HostEntry e : list) {
-      if (e.getIsdAs() == localAS) {
-        continue;
-      }
+    List<ParseAssignments.HostEntry> allASes = DownloadAssignmentsFromWeb.getList();
+    // remove entry for local AS
+    long localAS = Scion.defaultService().getLocalIsdAs();
+    allASes = allASes.stream().filter(e -> e.getIsdAs() != localAS).collect(Collectors.toList());
+    // Process all ASes
+    for (ParseAssignments.HostEntry e : allASes) {
       print(ScionUtil.toStringIA(e.getIsdAs()) + " \"" + e.getName() + "\"  ");
       demo.runDemo(e);
       listedAs.add(e.getIsdAs());
@@ -446,13 +446,13 @@ public class PingAll {
     return results.stream().filter(filter).mapToDouble(mapper).average().orElse(-1);
   }
 
-
   private static Result max(Predicate<Result> filter, Comparator<Result> comparator) {
     return results.stream().filter(filter).max(comparator).orElseThrow(NoSuchElementException::new);
   }
 
   private static <T> double median(Predicate<Result> filter, Function<Result, T> mapper) {
-    List<T> list = results.stream().filter(filter).map(mapper).sorted().collect(Collectors.toList());
+    List<T> list =
+        results.stream().filter(filter).map(mapper).sorted().collect(Collectors.toList());
     if (list.isEmpty()) {
       return -1;
     }
