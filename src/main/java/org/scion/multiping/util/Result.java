@@ -57,7 +57,7 @@ public class Result {
     }
     this.nPaths = nPaths;
     this.path = request;
-    nHops = PathRawParser.create(request.getRawPath()).getHopCount();
+    nHops = request != null ? PathRawParser.create(request.getRawPath()).getHopCount() : -1;
     remoteIP = msg.getPath().getRemoteAddress().getHostAddress();
     if (msg.isTimedOut()) {
       state = State.TIMEOUT;

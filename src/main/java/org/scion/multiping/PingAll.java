@@ -74,11 +74,14 @@ public class PingAll {
   private int nPathSuccess = 0;
   private int nPathTimeout = 0;
 
-  private static final Set<Long> listedAs = new HashSet<>();
-  private static final Set<Long> seenAs = new HashSet<>();
-  private static final List<Result> results = new ArrayList<>();
+  private final Set<Long> listedAs = new HashSet<>();
+  private final Set<Long> seenAs = new HashSet<>();
+  private final List<Result> results = new ArrayList<>();
 
-  private enum Policy {
+  private final ScmpProvider service;
+  private Policy policy = Policy.FASTEST_TR_ASYNC;
+
+  enum Policy {
     /** Fastest path using SCMP traceroute */
     FASTEST_TR,
     /** Fastest path using SCMP async traceroute */
@@ -90,8 +93,13 @@ public class PingAll {
     SHORTEST_ECHO
   }
 
-  private static final Policy POLICY = Policy.FASTEST_TR_ASYNC;
+  private static Policy DEFAULT_POLICY = Policy.FASTEST_TR_ASYNC;
   private static final boolean SHOW_PATH = false;
+
+  PingAll(Policy policy, ScmpProvider service) {
+    this.policy = policy;
+    this.service = service;
+  }
 
   public static void main(String[] args) throws IOException {
     PRINT = true;
@@ -99,19 +107,23 @@ public class PingAll {
     System.setProperty(Constants.PROPERTY_SHIM, STOP_SHIM ? "false" : "true"); // disable SHIM
 
     println("Settings:");
-    println("  Path policy = " + POLICY);
+    println("  Path policy = " + DEFAULT_POLICY);
     println("  ICMP=" + config.tryICMP);
     println("  printOnlyICMP=" + SHOW_ONLY_ICMP);
 
-    PingAll demo = new PingAll();
-    List<ParseAssignments.HostEntry> allASes = DownloadAssignmentsFromWeb.getList();
+    PingAll pingAll = new PingAll(DEFAULT_POLICY, ScmpProvider.defaultProvider(localPort));
+    pingAll.run();
+  }
+
+  void run() throws IOException {
+    List<ParseAssignments.HostEntry> allASes = service.getIsdAsEntries();
     // remove entry for local AS
     long localAS = Scion.defaultService().getLocalIsdAs();
     allASes = allASes.stream().filter(e -> e.getIsdAs() != localAS).collect(Collectors.toList());
     // Process all ASes
     for (ParseAssignments.HostEntry e : allASes) {
       print(ScionUtil.toStringIA(e.getIsdAs()) + " \"" + e.getName() + "\"  ");
-      demo.runDemo(e);
+      runAS(e);
       listedAs.add(e.getIsdAs());
     }
 
@@ -151,16 +163,16 @@ public class PingAll {
 
     println("");
     println("AS Stats:");
-    println(" all        = " + demo.nAsTried);
-    println(" success    = " + demo.nAsSuccess);
-    println(" no path    = " + demo.nAsNoPathFound);
-    println(" timeout    = " + demo.nAsTimeout);
-    println(" error      = " + demo.nAsError);
+    println(" all        = " + nAsTried);
+    println(" success    = " + nAsSuccess);
+    println(" no path    = " + nAsNoPathFound);
+    println(" timeout    = " + nAsTimeout);
+    println(" error      = " + nAsError);
     println(" not listed = " + nSeenButNotListed);
     println("Path Stats:");
-    println(" all        = " + demo.nPathTried);
-    println(" success    = " + demo.nPathSuccess);
-    println(" timeout    = " + demo.nPathTimeout);
+    println(" all        = " + nPathTried);
+    println(" success    = " + nPathSuccess);
+    println(" timeout    = " + nPathTimeout);
     println("ICMP Stats:");
     println(" all        = " + ICMP.nIcmpTried);
     println(" success    = " + ICMP.nIcmpSuccess);
@@ -168,9 +180,8 @@ public class PingAll {
     println(" error      = " + ICMP.nIcmpError);
   }
 
-  private void runDemo(ParseAssignments.HostEntry remote) throws IOException {
+  private void runAS(ParseAssignments.HostEntry remote) throws IOException {
     nAsTried++;
-    ScionService service = Scion.defaultService();
     // Dummy address. The traceroute will contact the control service IP instead.
     InetSocketAddress destinationAddress =
         new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 30041);
@@ -191,9 +202,16 @@ public class PingAll {
       }
       nPaths = paths.size();
       msg[0] = findPaths(paths, bestPath);
-      if (msg[0] != null && REPEAT > 1) {
-        try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
+      if (bestPath.get() == null) {
+        nAsTimeout++;
+      }
+      // bestPath is null if all paths have timed out
+      if (msg[0] != null && bestPath.get() != null && REPEAT > 1) {
+        try (ScmpProvider.Sync sender = service.getSync()) {
           for (int i = 1; i < msg.length; i++) {
+            if (bestPath.get() == null) {
+              break;
+            }
             List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(bestPath.get());
             msg[i] = messages.get(messages.size() - 1);
           }
@@ -249,7 +267,7 @@ public class PingAll {
   }
 
   private Scmp.TimedMessage findPaths(List<Path> paths, Ref<Path> bestOut) {
-    switch (POLICY) {
+    switch (policy) {
       case FASTEST_TR:
         return findFastestTR(paths, bestOut);
       case FASTEST_TR_ASYNC:
@@ -267,7 +285,7 @@ public class PingAll {
     Path path = PathPolicy.MIN_HOPS.filter(paths).get(0);
     refBest.set(path);
     ByteBuffer bb = ByteBuffer.allocate(0);
-    try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
+    try (ScmpProvider.Sync sender = service.getSync()) {
       nPathTried++;
       Scmp.EchoMessage msg = sender.sendEchoRequest(path, bb);
       if (msg == null) {
@@ -294,7 +312,7 @@ public class PingAll {
   private Scmp.TracerouteMessage findShortestTR(List<Path> paths, Ref<Path> refBest) {
     Path path = PathPolicy.MIN_HOPS.filter(paths).get(0);
     refBest.set(path);
-    try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
+    try (ScmpProvider.Sync sender = service.getSync()) {
       nPathTried++;
       List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(path);
       if (messages.isEmpty()) {
@@ -325,7 +343,7 @@ public class PingAll {
 
   private Scmp.TracerouteMessage findFastestTR(List<Path> paths, Ref<Path> refBest) {
     Scmp.TracerouteMessage best = null;
-    try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
+    try (ScmpProvider.Sync sender = service.getSync()) {
       for (Path path : paths) {
         nPathTried++;
         List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(path);
@@ -390,8 +408,7 @@ public class PingAll {
         };
 
     Scmp.TracerouteMessage best = null;
-    try (ScmpSenderAsync sender =
-        Scmp.newSenderAsyncBuilder(handler).setLocalPort(localPort).build()) {
+    try (ScmpProvider.Async sender = service.getAsync(handler)) {
       for (Path path : paths) {
         nPathTried++;
         int id = sender.sendTracerouteLast(path);
@@ -442,15 +459,15 @@ public class PingAll {
     return best;
   }
 
-  private static double avg(Predicate<Result> filter, ToDoubleFunction<Result> mapper) {
+  private double avg(Predicate<Result> filter, ToDoubleFunction<Result> mapper) {
     return results.stream().filter(filter).mapToDouble(mapper).average().orElse(-1);
   }
 
-  private static Result max(Predicate<Result> filter, Comparator<Result> comparator) {
+  private Result max(Predicate<Result> filter, Comparator<Result> comparator) {
     return results.stream().filter(filter).max(comparator).orElseThrow(NoSuchElementException::new);
   }
 
-  private static <T> double median(Predicate<Result> filter, Function<Result, T> mapper) {
+  private <T> double median(Predicate<Result> filter, Function<Result, T> mapper) {
     List<T> list =
         results.stream().filter(filter).map(mapper).sorted().collect(Collectors.toList());
     if (list.isEmpty()) {
