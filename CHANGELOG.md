@@ -20,6 +20,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - ISD-AS assignment parser broken after website change
   [#13](https://github.com/netsec-ethz/scion-java-multiping/pull/13)
+- Fixed calculation of average and median values
+  [#17](https://github.com/netsec-ethz/scion-java-multiping/pull/17)
 
 ## [0.4.0] - 2025-04-04
 
