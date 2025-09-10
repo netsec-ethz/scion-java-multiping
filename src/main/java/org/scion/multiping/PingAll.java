@@ -24,6 +24,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.scion.jpan.*;
 import org.scion.jpan.internal.PathRawParser;
@@ -308,6 +309,7 @@ public class PingAll {
   private Scmp.TracerouteMessage findFastestTRasync(List<Path> paths, Ref<Path> refBest) {
     ConcurrentHashMap<Integer, Scmp.TimedMessage> messages = new ConcurrentHashMap<>();
     CountDownLatch barrier = new CountDownLatch(paths.size());
+    AtomicInteger errors = new AtomicInteger();
     ScmpSenderAsync.ResponseHandler handler =
         new ScmpSenderAsync.ResponseHandler() {
           @Override
@@ -324,13 +326,13 @@ public class PingAll {
 
           @Override
           public void onError(Scmp.ErrorMessage msg) {
-            summary.incAsError();
+            errors.incrementAndGet();
             barrier.countDown();
           }
 
           @Override
           public void onException(Throwable t) {
-            summary.incAsError();
+            errors.incrementAndGet();
             barrier.countDown();
           }
         };
@@ -354,6 +356,11 @@ public class PingAll {
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new IllegalStateException(e);
+    }
+
+    if (errors.get() > 0 && messages.isEmpty()) {
+      summary.incAsError();
+      return null;
     }
 
     Scmp.TracerouteMessage best = null;

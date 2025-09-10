@@ -161,12 +161,11 @@ class PingAllTest {
     PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, p);
     ResultSummary summary = ping.run();
     assertEquals(0, summary.getMaxPaths().getPathCount());
-    assertEquals(9, summary.getAsErrors());
+    assertEquals(3, summary.getAsErrors());
   }
 
   @Test
   void testPingSendingError() throws IOException {
-    List<Path> paths = PathHelper.createPaths(3);
     class MyWithHandler extends WithIOError {
       MyWithHandler(ScmpSenderAsync.ResponseHandler handler) {
         super(handler, hdl -> {});
