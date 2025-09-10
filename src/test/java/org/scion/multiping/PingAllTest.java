@@ -126,7 +126,7 @@ class PingAllTest {
             () -> new MySync(3),
             MyWithHandler::new,
             Helper::isdAsList,
-            () -> 0L,
+            () -> Long.valueOf(0),
             (ia, addr) -> PathHelper.createPaths(3));
     PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, p);
     ResultSummary summary = ping.run();
@@ -156,7 +156,7 @@ class PingAllTest {
             () -> new MySync(3),
             MyWithHandler::new,
             Helper::isdAsList,
-            () -> 0L,
+            () -> Long.valueOf(0),
             (ia, addr) -> PathHelper.createPaths(3));
     PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, p);
     ResultSummary summary = ping.run();
@@ -177,7 +177,7 @@ class PingAllTest {
             () -> new MySync(3),
             MyWithHandler::new,
             Helper::isdAsList,
-            () -> 0L,
+            () -> Long.valueOf(0),
             (ia, addr) -> PathHelper.createPaths(3));
     PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, p);
     ResultSummary summary = ping.run();
