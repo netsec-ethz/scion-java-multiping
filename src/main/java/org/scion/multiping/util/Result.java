@@ -57,7 +57,7 @@ public class Result {
     }
     this.nPaths = nPaths;
     this.path = request;
-    nHops = PathRawParser.create(request.getRawPath()).getHopCount();
+    nHops = request != null ? PathRawParser.create(request.getRawPath()).getHopCount() : -1;
     remoteIP = msg.getPath().getRemoteAddress().getHostAddress();
     if (msg.isTimedOut()) {
       state = State.TIMEOUT;
@@ -98,7 +98,7 @@ public class Result {
   @Override
   public String toString() {
     String out = ScionUtil.toStringIA(isdAs) + " " + name;
-    out += "   " + ScionUtil.toStringPath(path.getMetadata());
+    out += "   " + (path != null ? ScionUtil.toStringPath(path.getMetadata()) : "N/A");
     out += "  " + remoteIP + "  nPaths=" + nPaths + "  nHops=" + nHops;
     return out + "  time=" + Util.round(pingMs, 2) + "ms" + "  ICMP=" + icmp;
   }

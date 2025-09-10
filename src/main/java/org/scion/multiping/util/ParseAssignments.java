@@ -36,7 +36,7 @@ public class ParseAssignments {
     private final String name;
     private String ip;
 
-    HostEntry(long isdAs, String name) {
+    public HostEntry(long isdAs, String name) {
       this.isdAs = isdAs;
       this.name = name;
     }
