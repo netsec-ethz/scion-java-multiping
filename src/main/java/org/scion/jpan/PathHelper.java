@@ -15,22 +15,23 @@
 package org.scion.jpan;
 
 import com.google.protobuf.ByteString;
-import org.scion.jpan.proto.daemon.Daemon;
-
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import org.scion.jpan.proto.daemon.Daemon;
 
 public class PathHelper {
+
+  private PathHelper() {}
 
   public static List<Path> createPaths(int n) {
     List<Path> paths = new ArrayList<>();
     for (int i = 0; i < n; i++) {
       Daemon.Path.Builder builder = Daemon.Path.newBuilder();
-      builder.setRaw(ByteString.copyFrom(new byte[]{}));
+      builder.setRaw(ByteString.copyFrom(new byte[] {}));
       try {
-        InetAddress dst = InetAddress.getByAddress(new byte[]{123, 123, 123, 123});
+        InetAddress dst = InetAddress.getByAddress(new byte[] {123, 123, 123, 123});
         paths.add(RequestPath.create(builder.build(), n + 1, dst, 12345));
       } catch (UnknownHostException e) {
         throw new ScionRuntimeException("Unable to create test path", e);
@@ -38,5 +39,4 @@ public class PathHelper {
     }
     return paths;
   }
-
 }

@@ -1,0 +1,168 @@
+// Copyright 2025 ETH Zurich
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package org.scion.multiping.util;
+
+import static org.scion.multiping.util.Util.println;
+import static org.scion.multiping.util.Util.round;
+
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
+import java.util.function.ToDoubleFunction;
+import java.util.stream.Collectors;
+
+public class ResultSummary {
+
+  private final List<Result> results = new ArrayList<>();
+  private int nAsTried = 0;
+  private int nAsSuccess = 0;
+  private int nAsError = 0;
+  private int nAsTimeout = 0;
+  private int nAsNoPathFound = 0;
+
+  private int nPathTried = 0;
+  private int nPathSuccess = 0;
+  private int nPathTimeout = 0;
+
+  private int nSeenButNotListed = 0;
+
+  public void incAsTried() {
+    nAsTried++;
+  }
+
+  public void incAsSuccess() {
+    nAsSuccess++;
+  }
+
+  public void incAsError() {
+    nAsError++;
+  }
+
+  public void incAsTimeout() {
+    nAsTimeout++;
+  }
+
+  public void incAsNoPathFound() {
+    nAsNoPathFound++;
+  }
+
+  public void incPathTried() {
+    nPathTried++;
+  }
+
+  public void incPathSuccess() {
+    nPathSuccess++;
+  }
+
+  public void incPathTimeout() {
+    nPathTimeout++;
+  }
+
+  public void incSeenButNotListed() {
+    nSeenButNotListed++;
+  }
+
+  public void add(Result r) {
+    results.add(r);
+  }
+
+  public Result getMaxPaths() {
+    return max(r -> r.getPathCount() > 0, Comparator.comparingInt(Result::getPathCount));
+  }
+
+  public int getAsTimeouts() {
+    return nAsTimeout;
+  }
+
+  public int getAsErrors() {
+    return nAsError;
+  }
+
+  public int getPathTimeouts() {
+    return nPathTimeout;
+  }
+
+  public void prettyPrint() {
+    // max:
+    Result maxPing = max(Result::isSuccess, (o1, o2) -> (int) (o1.getPingMs() - o2.getPingMs()));
+    Result maxHops = max(r -> r.getHopCount() > 0, Comparator.comparingInt(Result::getHopCount));
+    Result maxPaths = max(r -> r.getPathCount() > 0, Comparator.comparingInt(Result::getPathCount));
+
+    // avg/median:
+    double avgPing = avg(Result::isSuccess, Result::getPingMs);
+    double avgHops = avg(r -> r.getHopCount() > 0, Result::getHopCount);
+    double avgPaths = avg(r -> r.getPathCount() > 0, Result::getPathCount);
+    double medianPing = median(Result::isSuccess, Result::getPingMs);
+    double medianHops = median(r -> r.getHopCount() > 0, Result::getHopCount);
+    double medianPaths = median(r -> r.getPathCount() > 0, Result::getPathCount);
+
+    println("");
+    println("Max hops         = " + maxHops.getHopCount() + ":    " + maxHops);
+    println("Max ping [ms]    = " + round(maxPing.getPingMs(), 2) + ":    " + maxPing);
+    println("Max paths        = " + maxPaths.getPathCount() + ":    " + maxPaths);
+
+    println("Median hops      = " + (int) medianHops);
+    println("Median ping [ms] = " + round(medianPing, 2));
+    println("Median paths     = " + (int) medianPaths);
+
+    println("Avg hops         = " + round(avgHops, 1));
+    println("Avg ping [ms]    = " + round(avgPing, 2));
+    println("Avg paths        = " + (int) round(avgPaths, 0));
+
+    println("");
+    println("AS Stats:");
+    println(" all        = " + (nAsTried + 1)); // +1 for local AS
+    println(" success    = " + nAsSuccess);
+    println(" no path    = " + (nAsNoPathFound + 1)); // +1 for local AS
+    println(" timeout    = " + nAsTimeout);
+    println(" error      = " + nAsError);
+    println(" not listed = " + nSeenButNotListed);
+    println("Path Stats:");
+    println(" all        = " + nPathTried);
+    println(" success    = " + nPathSuccess);
+    println(" timeout    = " + nPathTimeout);
+    println("ICMP Stats:");
+    println(" all        = " + ICMP.nIcmpTried);
+    println(" success    = " + ICMP.nIcmpSuccess);
+    println(" timeout    = " + ICMP.nIcmpTimeout);
+    println(" error      = " + ICMP.nIcmpError);
+  }
+
+  private double avg(Predicate<Result> filter, ToDoubleFunction<Result> mapper) {
+    return results.stream().filter(filter).mapToDouble(mapper).average().orElse(-1);
+  }
+
+  private Result max(Predicate<Result> filter, Comparator<Result> comparator) {
+    Result empty = new Result(new ParseAssignments.HostEntry(0, "dummy"), Result.State.ERROR);
+    return results.stream()
+        .filter(filter)
+        .max(comparator)
+        .orElse(empty); // orElseThrow(NoSuchElementException::new);
+  }
+
+  private <T> double median(Predicate<Result> filter, Function<Result, T> mapper) {
+    List<T> list =
+        results.stream().filter(filter).map(mapper).sorted().collect(Collectors.toList());
+    if (list.isEmpty()) {
+      return -1;
+    }
+    if (list.get(0) instanceof Double) {
+      return (Double) list.get(list.size() / 2);
+    }
+    return (Integer) list.get(list.size() / 2);
+  }
+}

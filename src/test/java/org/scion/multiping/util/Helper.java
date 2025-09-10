@@ -14,10 +14,9 @@
 
 package org.scion.multiping.util;
 
-import org.scion.jpan.ScionUtil;
-
 import java.util.ArrayList;
 import java.util.List;
+import org.scion.jpan.ScionUtil;
 
 public class Helper {
 
@@ -28,5 +27,4 @@ public class Helper {
     result.add(new ParseAssignments.HostEntry(ScionUtil.parseIA("2-123"), "AS-2-123"));
     return result;
   }
-
 }

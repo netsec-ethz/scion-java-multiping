@@ -98,7 +98,7 @@ public class Result {
   @Override
   public String toString() {
     String out = ScionUtil.toStringIA(isdAs) + " " + name;
-    out += "   " + ScionUtil.toStringPath(path.getMetadata());
+    out += "   " + (path != null ? ScionUtil.toStringPath(path.getMetadata()) : "N/A");
     out += "  " + remoteIP + "  nPaths=" + nPaths + "  nHops=" + nHops;
     return out + "  time=" + Util.round(pingMs, 2) + "ms" + "  ICMP=" + icmp;
   }
