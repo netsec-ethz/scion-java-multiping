@@ -312,24 +312,12 @@ public class PingAll {
         new ScmpSenderAsync.ResponseHandler() {
           @Override
           public void onResponse(Scmp.TimedMessage msg) {
-            System.out.println(
-                "Received response for "
-                    + ScionUtil.toStringIA(msg.getIdentifier())
-                    + " "
-                    + msg.getSequenceNumber());
             barrier.countDown();
             messages.put(msg.getIdentifier(), msg);
           }
 
           @Override
           public void onTimeout(Scmp.TimedMessage msg) {
-            System.out.println(
-                "Timeout for "
-                    + ScionUtil.toStringIA(msg.getIdentifier())
-                    + " "
-                    + msg.getSequenceNumber()
-                    + " "
-                    + msg.getPath().getRemoteAddress());
             barrier.countDown();
             messages.put(msg.getIdentifier(), msg);
           }
@@ -351,21 +339,18 @@ public class PingAll {
     try (ScionProvider.Async sender = service.getAsync(handler)) {
       for (Path path : paths) {
         summary.incPathTried();
-        int x = sender.sendTracerouteLast(path);
-        System.out.println("Sending " + x + "     " + ScionUtil.toStringPath(path.getRawPath()) + " to " + path.getRemoteAddress());
+        sender.sendTracerouteLast(path);
+      }
+
+      // Wait for all messages to be received, BEFORE closing the "sender".
+      if (!barrier.await(1100, TimeUnit.MILLISECONDS)) {
+        throw new IllegalStateException(
+            "Missing messages: " + barrier.getCount() + "/" + paths.size());
       }
     } catch (IOException e) {
       println("ERROR: " + e.getMessage());
       summary.incAsError();
       return null;
-    }
-
-    // Wait for all messages to be received
-    try {
-      if (!barrier.await(1100, TimeUnit.MILLISECONDS)) {
-        throw new IllegalStateException(
-            "Missing messages: " + barrier.getCount() + "/" + paths.size());
-      }
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
       throw new IllegalStateException(e);
