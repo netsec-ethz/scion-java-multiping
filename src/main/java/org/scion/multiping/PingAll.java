@@ -106,7 +106,7 @@ public class PingAll {
   ResultSummary run() throws IOException {
     List<ParseAssignments.HostEntry> allASes = service.getIsdAsEntries();
     // remove entry for local AS
-    long localAS = Scion.defaultService().getLocalIsdAs();
+    long localAS = service.getLocalIsdAs();
     allASes = allASes.stream().filter(e -> e.getIsdAs() != localAS).collect(Collectors.toList());
     // Process all ASes
     for (ParseAssignments.HostEntry e : allASes) {
