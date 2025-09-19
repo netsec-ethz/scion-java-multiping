@@ -104,7 +104,8 @@ public class Main {
   private static void printUsageDownloadAssignments() {
     Util.println("Usage: scion-multiping download-assignments");
     Util.println();
-    Util.println("  This tool downloads a list of known ISD/AS assignments and saves it to a file.");
+    Util.println(
+        "  This tool downloads a list of known ISD/AS assignments and saves it to a file.");
     Util.println("  The output file is called `isd-as-assignments.csv`.");
     Util.println("");
   }
@@ -128,7 +129,8 @@ public class Main {
   private static void printUsagePingRepeat() {
     Util.println("Usage: scion-multiping ping-repeat");
     Util.println();
-    Util.println("  This tool is used for repeatedly probing (traceroute) multiple paths to multiple ASes.");
+    Util.println(
+        "  This tool is used for repeatedly probing (traceroute) multiple paths to multiple ASes.");
     Util.println("  The destination ASes are read from a file `isd-as-assignments.csv`.");
     Util.println("  Other configuration options can be defined in `ping-repeat-config.json`.");
     Util.println("  Results are written to a CSV file `ping-results.csv`.");
