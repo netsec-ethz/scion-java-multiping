@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 -- Nothing yet
 
+### Added
+
+- Added command line `--help` and several options to multi-ping.
+  [#20](https://github.com/netsec-ethz/scion-java-multiping/pull/20)
+
 ## [0.5.0] - 2025-09-09
 
 ### Added

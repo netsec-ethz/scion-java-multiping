@@ -23,6 +23,15 @@ java -jar scion-multiping-0.5.0-executable.jar [tool-command]
 Some tools require configuration files, see below in the tool description sections.   
 See also the troubleshooting section below in case of issues.
 
+# Help
+
+To get command line help, the tool can be executed with:
+
+```
+java -jar scion-multiping-0.5.0-executable.jar --help
+```
+
+
 # Download Assignments
 
 The tool
@@ -34,7 +43,9 @@ Note: the `isd-as-assignments.csv` output file can be directly used as input fil
 
 The tool
 parses [Anapayas ISD/AS assignment website](https://docs.anapaya.net/en/latest/resources/isd-as-assignments/),
-identifies the shortest path to each AS and sends a traceroute to each AS.
+identifies the shortest or fastest path to each AS and sends a traceroute to each AS.
+By default is will use the fastest path (determined by a traceroute over all paths), but it can be
+configured to use the shortest path (`--shortest`).
 It reports the number of paths to each AS as well as the shortest path with latency, remote IP, hop
 count and remote IP.
 
