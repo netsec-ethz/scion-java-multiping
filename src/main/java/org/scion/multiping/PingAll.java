@@ -52,8 +52,8 @@ public class PingAll {
   private static final boolean SHOW_ONLY_ICMP = false;
   private static final Config config = new Config();
 
-  private static final int LOCAL_PORT = 30041;
-  private static final boolean STOP_SHIM = true;
+  static int localPort = 30041;
+  private static boolean startShim = false;
 
   static {
     config.tryICMP = false;
@@ -88,19 +88,69 @@ public class PingAll {
     this.service = service;
   }
 
-  public static void main(String[] args) throws IOException {
+  public static void main(String[] argsArray) throws IOException {
     PRINT = true;
-    // System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
-    System.setProperty(Constants.PROPERTY_SHIM, STOP_SHIM ? "false" : "true"); // disable SHIM
+
+    Policy policy = parseArgs(argsArray);
+
+    System.setProperty(Constants.PROPERTY_SHIM, startShim ? "true" : "false"); // disable SHIM
 
     println("Settings:");
-    println("  Path policy = " + DEFAULT_POLICY);
+    println("  Path policy = " + policy);
     println("  ICMP=" + config.tryICMP);
     println("  printOnlyICMP=" + SHOW_ONLY_ICMP);
 
-    PingAll pingAll = new PingAll(DEFAULT_POLICY, ScionProvider.defaultProvider(LOCAL_PORT));
+    PingAll pingAll = new PingAll(policy, ScionProvider.defaultProvider(localPort));
     pingAll.run();
     pingAll.summary.prettyPrint();
+  }
+
+  private static Policy parseArgs(String[] argsArray) {
+    List<String> args = new ArrayList<>(Arrays.asList(argsArray));
+    Policy policy = DEFAULT_POLICY;
+    while (!args.isEmpty()) {
+      switch (args.get(0)) {
+        case "--fastest":
+          policy = Policy.FASTEST_TR_ASYNC;
+          break;
+        case "--shortest":
+          policy = Policy.SHORTEST_TR;
+          break;
+        case "--shortest_echo":
+          policy = Policy.SHORTEST_ECHO;
+          break;
+        case "--fastest_sync":
+          policy = Policy.FASTEST_TR;
+          break;
+        case "--help":
+          Main.printUsagePingAll();
+          System.exit(0);
+        case "--shim":
+          startShim = true;
+          break;
+        case "--port":
+          if (args.size() < 2) {
+            Util.println("Error: --port requires a port number");
+            Main.printUsagePingAll();
+            System.exit(1);
+          }
+          try {
+            localPort = Integer.parseInt(args.get(1));
+          } catch (NumberFormatException e) {
+            Util.println("Error: Invalid port number: " + args.get(1));
+            Main.printUsagePingAll();
+            System.exit(1);
+          }
+          args.remove(1);
+          break;
+        default:
+          Util.println("Unknown option: " + args.get(0));
+          Main.printUsagePingAll();
+          System.exit(1);
+      }
+      args.remove(0);
+    }
+    return policy;
   }
 
   ResultSummary run() throws IOException {
