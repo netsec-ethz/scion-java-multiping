@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added output of median and average values
   [#15](https://github.com/netsec-ethz/scion-java-multiping/pull/15)
 - Simple CI script to test formatting and JUnit
-  [#15](https://github.com/netsec-ethz/scion-java-multiping/pull/15)
+  [#16](https://github.com/netsec-ethz/scion-java-multiping/pull/16)
 
 ### Fixed
 
