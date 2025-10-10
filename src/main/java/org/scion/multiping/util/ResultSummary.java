@@ -111,35 +111,35 @@ public class ResultSummary {
     double medianPaths = median(r -> r.getPathCount() > 0, Result::getPathCount);
 
     println("");
-    println("Max hops         = " + maxHops.getHopCount() + ":    " + maxHops);
-    println("Max ping [ms]    = " + round(maxPing.getPingMs(), 2) + ":    " + maxPing);
-    println("Max paths        = " + maxPaths.getPathCount() + ":    " + maxPaths);
+    println("Max hops         =\t " + maxHops.getHopCount() + "\t : " + maxHops);
+    println("Max ping [ms]    =\t " + round(maxPing.getPingMs(), 2) + "\t : " + maxPing);
+    println("Max paths        =\t " + maxPaths.getPathCount() + "\t : " + maxPaths);
 
-    println("Median hops      = " + (int) medianHops);
-    println("Median ping [ms] = " + round(medianPing, 2));
-    println("Median paths     = " + (int) medianPaths);
+    println("Median hops      =\t " + (int) medianHops);
+    println("Median ping [ms] =\t " + round(medianPing, 2));
+    println("Median paths     =\t " + (int) medianPaths);
 
-    println("Avg hops         = " + round(avgHops, 1));
-    println("Avg ping [ms]    = " + round(avgPing, 2));
-    println("Avg paths        = " + (int) round(avgPaths, 0));
+    println("Avg hops         =\t " + round(avgHops, 1));
+    println("Avg ping [ms]    =\t " + round(avgPing, 2));
+    println("Avg paths        =\t " + (int) round(avgPaths, 0));
 
     println("");
     println("AS Stats:");
-    println(" all        = " + (nAsTried + 1)); // +1 for local AS
-    println(" success    = " + nAsSuccess);
-    println(" no path    = " + (nAsNoPathFound + 1)); // +1 for local AS
-    println(" timeout    = " + nAsTimeout);
-    println(" error      = " + nAsError);
-    println(" not listed = " + nSeenButNotListed);
+    println(" all        =\t " + (nAsTried + 1)); // +1 for local AS
+    println(" success    =\t " + nAsSuccess);
+    println(" no path    =\t " + (nAsNoPathFound + 1)); // +1 for local AS
+    println(" timeout    =\t " + nAsTimeout);
+    println(" error      =\t " + nAsError);
+    println(" not listed =\t " + nSeenButNotListed);
     println("Path Stats:");
-    println(" all        = " + nPathTried);
-    println(" success    = " + nPathSuccess);
-    println(" timeout    = " + nPathTimeout);
+    println(" all        =\t " + nPathTried);
+    println(" success    =\t " + nPathSuccess);
+    println(" timeout    =\t " + nPathTimeout);
     println("ICMP Stats:");
-    println(" all        = " + ICMP.nIcmpTried);
-    println(" success    = " + ICMP.nIcmpSuccess);
-    println(" timeout    = " + ICMP.nIcmpTimeout);
-    println(" error      = " + ICMP.nIcmpError);
+    println(" all        =\t " + ICMP.nIcmpTried);
+    println(" success    =\t " + ICMP.nIcmpSuccess);
+    println(" timeout    =\t " + ICMP.nIcmpTimeout);
+    println(" error      =\t " + ICMP.nIcmpError);
   }
 
   private double avg(Predicate<Result> filter, ToDoubleFunction<Result> mapper) {
@@ -151,7 +151,7 @@ public class ResultSummary {
     return results.stream()
         .filter(filter)
         .max(comparator)
-        .orElse(empty); // orElseThrow(NoSuchElementException::new);
+        .orElse(empty);
   }
 
   private <T> double median(Predicate<Result> filter, Function<Result, T> mapper) {
