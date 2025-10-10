@@ -14,6 +14,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Added command line `--help` and several options to multi-ping.
   [#20](https://github.com/netsec-ethz/scion-java-multiping/pull/20)
 
+### Changed
+
+- Output summary uses `\t` whitespaces for easier copying.
+  [#21](https://github.com/netsec-ethz/scion-java-multiping/pull/21)
+
 ## [0.5.0] - 2025-09-09
 
 ### Added
