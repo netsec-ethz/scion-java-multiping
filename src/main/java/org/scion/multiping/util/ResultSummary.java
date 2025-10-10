@@ -148,10 +148,7 @@ public class ResultSummary {
 
   private Result max(Predicate<Result> filter, Comparator<Result> comparator) {
     Result empty = new Result(new ParseAssignments.HostEntry(0, "dummy"), Result.State.ERROR);
-    return results.stream()
-        .filter(filter)
-        .max(comparator)
-        .orElse(empty);
+    return results.stream().filter(filter).max(comparator).orElse(empty);
   }
 
   private <T> double median(Predicate<Result> filter, Function<Result, T> mapper) {
