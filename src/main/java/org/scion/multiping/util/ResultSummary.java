@@ -17,13 +17,15 @@ package org.scion.multiping.util;
 import static org.scion.multiping.util.Util.println;
 import static org.scion.multiping.util.Util.round;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
+import java.util.*;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
+
+import org.scion.jpan.ScionUtil;
+import org.scion.jpan.Scmp;
+import org.scion.jpan.internal.PathRawParser;
 
 public class ResultSummary {
 
@@ -39,6 +41,14 @@ public class ResultSummary {
   private int nPathTimeout = 0;
 
   private int nSeenButNotListed = 0;
+  private final List<String> seenButNotListed = new ArrayList<>();
+
+  private long totalMaxHopsIsdAs;
+  private int totalMaxHopsN;
+  private long totalMaxPingIsdAs;
+  private double totalMaxPingMs;
+  private int totalMaxPathsN = 0;
+  private long totalMaxPathsIsdAs = 0;
 
   public void incAsTried() {
     nAsTried++;
@@ -111,17 +121,23 @@ public class ResultSummary {
     double medianPaths = median(r -> r.getPathCount() > 0, Result::getPathCount);
 
     println("");
-    println("Max hops         =\t " + maxHops.getHopCount() + "\t : " + maxHops);
-    println("Max ping [ms]    =\t " + round(maxPing.getPingMs(), 2) + "\t : " + maxPing);
-    println("Max paths        =\t " + maxPaths.getPathCount() + "\t : " + maxPaths);
+    println("Max hops            =\t " + maxHops.getHopCount() + "\t : " + maxHops);
+    println("Max ping [ms]       =\t " + round(maxPing.getPingMs(), 2) + "\t : " + maxPing);
+    println("Max paths           =\t " + maxPaths.getPathCount() + "\t : " + maxPaths);
 
-    println("Median hops      =\t " + (int) medianHops);
-    println("Median ping [ms] =\t " + round(medianPing, 2));
-    println("Median paths     =\t " + (int) medianPaths);
+    println("Total max hops      =\t " + totalMaxHopsN + "\t : " + ScionUtil.toStringIA(totalMaxHopsIsdAs));
+    println("Total max ping [ms] =\t " + round(totalMaxPingMs, 2) + "\t : " + ScionUtil.toStringIA(totalMaxPingIsdAs));
+    println("Total max paths     =\t " + totalMaxPathsN + "\t : " + ScionUtil.toStringIA(totalMaxPathsIsdAs));
 
-    println("Avg hops         =\t " + round(avgHops, 1));
-    println("Avg ping [ms]    =\t " + round(avgPing, 2));
-    println("Avg paths        =\t " + (int) round(avgPaths, 0));
+    // Median:
+
+    println("Median hops         =\t " + (int) medianHops);
+    println("Median ping [ms]    =\t " + round(medianPing, 2));
+    println("Median paths        =\t " + (int) medianPaths);
+
+    println("Avg hops            =\t " + round(avgHops, 1));
+    println("Avg ping [ms]       =\t " + round(avgPing, 2));
+    println("Avg paths           =\t " + (int) round(avgPaths, 0));
 
     println("");
     println("AS Stats:");
@@ -149,8 +165,7 @@ public class ResultSummary {
   }
 
   private Result max(Predicate<Result> filter, Comparator<Result> comparator) {
-    Result empty = new Result(new ParseAssignments.HostEntry(0, "dummy"), Result.State.ERROR);
-    return results.stream().filter(filter).max(comparator).orElse(empty);
+    return results.stream().filter(filter).max(comparator).orElse(Result.createDummy());
   }
 
   private <T> double median(Predicate<Result> filter, Function<Result, T> mapper) {
@@ -163,5 +178,28 @@ public class ResultSummary {
       return (Double) list.get(list.size() / 2);
     }
     return (Integer) list.get(list.size() / 2);
+  }
+
+  public void checkTotalMax(long remote, int size) {
+    if (size > totalMaxPathsN) {
+      totalMaxPathsN = size;
+      totalMaxPathsIsdAs = remote;
+    }
+  }
+
+  public void checkTotalMax(long isdAs, Scmp.TimedMessage msg) {
+    int nHops = PathRawParser.create(msg.getPath().getRawPath()).getHopCount();
+    if (nHops > totalMaxHopsN) {
+      totalMaxHopsN = nHops;
+      totalMaxHopsIsdAs = isdAs;
+    }
+
+    if (!msg.isTimedOut()) {
+      long milliSeconds = msg.getNanoSeconds() / 1_000_000;
+      if (milliSeconds > totalMaxPingMs) {
+        totalMaxPingMs = milliSeconds;
+        totalMaxPingIsdAs = isdAs;
+      }
+    }
   }
 }

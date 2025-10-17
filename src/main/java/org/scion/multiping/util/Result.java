@@ -39,6 +39,10 @@ public class Result {
   private String icmp;
   private State state = State.NOT_DONE;
 
+  public static Result createDummy() {
+    return new Result(new ParseAssignments.HostEntry(0, "dummy"), State.ERROR);
+  }
+
   private Result(ParseAssignments.HostEntry e) {
     this.isdAs = e.getIsdAs();
     this.name = e.getName();
