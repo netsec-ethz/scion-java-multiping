@@ -198,6 +198,7 @@ public class PingAll {
         return;
       }
       nPaths = paths.size();
+      summary.checkTotalMax(remote.getIsdAs(), paths.size());
       msgs[0] = findPaths(paths, bestPath);
       // bestPath is null if all paths have timed out
       if (msgs[0] != null && bestPath.get() != null && REPEAT > 1) {
@@ -424,6 +425,7 @@ public class PingAll {
     Scmp.TracerouteMessage best = null;
     for (Scmp.TimedMessage tm : messages.values()) {
       Scmp.TracerouteMessage msg = (Scmp.TracerouteMessage) tm;
+      summary.checkTotalMax(msg.getIsdAs(), msg);
       seenAs.add(msg.getIsdAs());
 
       if (msg.isTimedOut()) {

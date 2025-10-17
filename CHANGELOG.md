@@ -13,6 +13,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - Added command line `--help` and several options to multi-ping.
   [#20](https://github.com/netsec-ethz/scion-java-multiping/pull/20)
+- Added output of global maxima (longest path, ...)
+  [#24](https://github.com/netsec-ethz/scion-java-multiping/pull/24)
 
 ### Changed
 
