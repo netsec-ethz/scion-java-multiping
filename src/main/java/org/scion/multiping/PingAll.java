@@ -200,9 +200,6 @@ public class PingAll {
       if (msgs[0] != null && bestPath.get() != null && REPEAT > 1) {
         try (ScionProvider.Sync sender = service.getSync()) {
           for (int i = 1; i < msgs.length; i++) {
-            if (bestPath.get() == null) {
-              break;
-            }
             List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(bestPath.get());
             msgs[i] = messages.get(messages.size() - 1);
           }
@@ -214,7 +211,13 @@ public class PingAll {
       summary.add(new Result(remote, Result.State.ERROR));
       return;
     }
-    Result result = new Result(remote, msgs[0], bestPath.get(), nPaths);
+    Scmp.TimedMessage bestMessage = null;
+    for (Scmp.TimedMessage m : msgs) {
+      if (bestMessage == null || m != null && m.getNanoSeconds() < bestMessage.getNanoSeconds()) {
+        bestMessage = m;
+      }
+    }
+    Result result = new Result(remote, bestMessage, bestPath.get(), nPaths);
     summary.add(result);
 
     if (msgs[0] == null) {
@@ -365,13 +368,13 @@ public class PingAll {
           @Override
           public void onResponse(Scmp.TimedMessage msg) {
             barrier.countDown();
-            messages.put(msg.getIdentifier(), msg);
+            messages.put(msg.getSequenceNumber(), msg);
           }
 
           @Override
           public void onTimeout(Scmp.TimedMessage msg) {
             barrier.countDown();
-            messages.put(msg.getIdentifier(), msg);
+            messages.put(msg.getSequenceNumber(), msg);
           }
 
           @Override
