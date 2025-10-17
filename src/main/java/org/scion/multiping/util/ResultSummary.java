@@ -22,7 +22,6 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
-
 import org.scion.jpan.ScionUtil;
 import org.scion.jpan.Scmp;
 import org.scion.jpan.internal.PathRawParser;
@@ -125,9 +124,12 @@ public class ResultSummary {
     println("Max ping [ms]       =\t " + round(maxPing.getPingMs(), 2) + "\t : " + maxPing);
     println("Max paths           =\t " + maxPaths.getPathCount() + "\t : " + maxPaths);
 
-    println("Total max hops      =\t " + totalMaxHopsN + "\t : " + ScionUtil.toStringIA(totalMaxHopsIsdAs));
-    println("Total max ping [ms] =\t " + round(totalMaxPingMs, 2) + "\t : " + ScionUtil.toStringIA(totalMaxPingIsdAs));
-    println("Total max paths     =\t " + totalMaxPathsN + "\t : " + ScionUtil.toStringIA(totalMaxPathsIsdAs));
+    String tMaxHopsIA = ScionUtil.toStringIA(totalMaxHopsIsdAs);
+    String tMaxPingIA = ScionUtil.toStringIA(totalMaxPingIsdAs);
+    String tMaxPathsIA = ScionUtil.toStringIA(totalMaxPathsIsdAs);
+    println("Total max hops      =\t " + totalMaxHopsN + "\t : " + tMaxHopsIA);
+    println("Total max ping [ms] =\t " + round(totalMaxPingMs, 2) + "\t : " + tMaxPingIA);
+    println("Total max paths     =\t " + totalMaxPathsN + "\t : " + tMaxPathsIA);
 
     // Median:
 
