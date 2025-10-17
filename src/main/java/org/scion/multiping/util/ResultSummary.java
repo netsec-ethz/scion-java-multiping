@@ -96,7 +96,7 @@ public class ResultSummary {
     return nPathTimeout;
   }
 
-  public void prettyPrint() {
+  public void prettyPrint(Config config) {
     // max:
     Result maxPing = max(Result::isSuccess, (o1, o2) -> (int) (o1.getPingMs() - o2.getPingMs()));
     Result maxHops = max(r -> r.getHopCount() > 0, Comparator.comparingInt(Result::getHopCount));
@@ -135,11 +135,13 @@ public class ResultSummary {
     println(" all        =\t " + nPathTried);
     println(" success    =\t " + nPathSuccess);
     println(" timeout    =\t " + nPathTimeout);
-    println("ICMP Stats:");
-    println(" all        =\t " + ICMP.nIcmpTried);
-    println(" success    =\t " + ICMP.nIcmpSuccess);
-    println(" timeout    =\t " + ICMP.nIcmpTimeout);
-    println(" error      =\t " + ICMP.nIcmpError);
+    if (config.tryICMP) {
+      println("ICMP Stats:");
+      println(" all        =\t " + ICMP.nIcmpTried);
+      println(" success    =\t " + ICMP.nIcmpSuccess);
+      println(" timeout    =\t " + ICMP.nIcmpTimeout);
+      println(" error      =\t " + ICMP.nIcmpError);
+    }
   }
 
   private double avg(Predicate<Result> filter, ToDoubleFunction<Result> mapper) {
