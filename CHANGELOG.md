@@ -19,6 +19,11 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 - Output summary uses `\t` whitespaces for easier copying.
   [#21](https://github.com/netsec-ethz/scion-java-multiping/pull/21)
 
+### Fixed
+
+- PingAll did not report the best path.
+  [#22](https://github.com/netsec-ethz/scion-java-multiping/pull/22)
+
 ## [0.5.0] - 2025-09-09
 
 ### Added
