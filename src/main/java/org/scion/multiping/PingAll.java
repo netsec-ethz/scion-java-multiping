@@ -100,9 +100,12 @@ public class PingAll {
     println("  ICMP=" + config.tryICMP);
     println("  printOnlyICMP=" + SHOW_ONLY_ICMP);
 
+    long t1 = System.currentTimeMillis();
     PingAll pingAll = new PingAll(policy, ScionProvider.defaultProvider(localPort));
     pingAll.run();
-    pingAll.summary.prettyPrint();
+    pingAll.summary.prettyPrint(config);
+    long t2 = System.currentTimeMillis();
+    println("Total time: " + round((t2 - t1) / 1000.0, 2) + "s");
   }
 
   private static Policy parseArgs(String[] argsArray) {
@@ -160,7 +163,7 @@ public class PingAll {
     allASes = allASes.stream().filter(e -> e.getIsdAs() != localAS).collect(Collectors.toList());
     // Process all ASes
     for (ParseAssignments.HostEntry e : allASes) {
-      print(ScionUtil.toStringIA(e.getIsdAs()) + " \"" + e.getName() + "\"  ");
+      print(ScionUtil.toStringIA(e.getIsdAs()) + "\t \"" + e.getName() + "\"\t  ");
       runAS(e);
       listedAs.add(e.getIsdAs());
     }
@@ -238,7 +241,7 @@ public class PingAll {
     // output
     int nHops = PathRawParser.create(msgs[0].getPath().getRawPath()).getHopCount();
     String addr = msgs[0].getPath().getRemoteAddress().getHostAddress();
-    print(addr + "  nPaths=" + nPaths + "  nHops=" + nHops + "  time= ");
+    print(addr + "\t  nPaths=" + nPaths + "\t  nHops=" + nHops + "\t  time=");
     for (Scmp.TimedMessage m : msgs) {
       if (m == null) {
         print("N/A ");
@@ -248,7 +251,9 @@ public class PingAll {
       print(millis + "ms ");
     }
     String icmpStr = icmpMs.toString();
-    print("  ICMP= " + icmpStr);
+    if (config.tryICMP) {
+      print("  ICMP= " + icmpStr);
+    }
     if (SHOW_PATH) {
       print("  " + ScionUtil.toStringPath(bestPath.get().getMetadata()));
     }
