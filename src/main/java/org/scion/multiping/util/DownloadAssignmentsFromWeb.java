@@ -24,7 +24,7 @@ import org.scion.jpan.ScionUtil;
 
 public class DownloadAssignmentsFromWeb {
   private static final String HTTPS_URL =
-      "https://docs.anapaya.net/en/latest/resources/isd-as-assignments/";
+      "https://learn.anapaya.net/docs/resources/assignments/ases/";
 
   public static void main(String[] args) throws IOException {
     new DownloadAssignmentsFromWeb().jsoup();
@@ -44,19 +44,21 @@ public class DownloadAssignmentsFromWeb {
     Document doc = Jsoup.connect(HTTPS_URL).get();
 
     for (Element table : doc.getElementsByTag("table")) {
-      for (Element isd_as : table.getElementsContainingText("ISD-AS")) {
-        if ("table".equals(isd_as.tagName())) {
-          for (Element te : table.children()) {
-            if ("thead".equals(te.tagName())) {
+      for (Element te : table.children()) {
+        if ("thead".equals(te.tagName())) {
+          continue;
+        }
+        for (Element te2 : te.children()) {
+          String as = te2.child(0).getElementsByTag("td").text();
+          String name = te2.child(1).getElementsByTag("td").text();
+          String isdList = te2.child(2).getElementsByTag("td").text();
+          // System.out.println(isdAs + " " + name);
+          for (String isd : isdList.split(",")) {
+            if (isd.isEmpty()) {
               continue;
             }
-            for (Element te2 : te.children()) {
-              // System.out.println("     te3: " + te2.tag());
-              String isdAs = te2.child(0).getElementsByTag("td").text();
-              String name = te2.child(1).getElementsByTag("td").text();
-              // System.out.println(isdAs + " " + name);
-              result.add(new ParseAssignments.HostEntry(ScionUtil.parseIA(isdAs), name));
-            }
+            long isdAs = (((long) Integer.parseInt(isd.trim())) << 48) + ScionUtil.parseAS(as);
+            result.add(new ParseAssignments.HostEntry(isdAs, name));
           }
         }
       }

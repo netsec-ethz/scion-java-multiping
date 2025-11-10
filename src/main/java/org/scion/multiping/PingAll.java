@@ -178,7 +178,7 @@ public class PingAll {
   }
 
   private void runAS(ParseAssignments.HostEntry remote) throws IOException {
-    summary.incAsTried();
+    summary.incIsdAsTried(remote.getIsdAs());
     // Dummy address. The traceroute will contact the control service IP instead.
     InetSocketAddress destinationAddress =
         new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 30041);
@@ -193,13 +193,13 @@ public class PingAll {
         if (!SHOW_ONLY_ICMP) {
           println("WARNING: No path found from " + src + " to " + dst);
         }
-        summary.incAsNoPathFound();
+        summary.incAsNoPathFound(remote.getIsdAs());
         summary.add(new Result(remote, Result.State.NO_PATH));
         return;
       }
       nPaths = paths.size();
       summary.checkTotalMax(remote.getIsdAs(), paths.size());
-      msgs[0] = findPaths(paths, bestPath);
+      msgs[0] = findPaths(paths, bestPath, remote.getIsdAs());
       // bestPath is null if all paths have timed out
       if (msgs[0] != null && bestPath.get() != null && REPEAT > 1) {
         try (ScionProvider.Sync sender = service.getSync()) {
@@ -211,7 +211,7 @@ public class PingAll {
       }
     } catch (ScionRuntimeException e) {
       println("ERROR: " + e.getMessage());
-      summary.incAsError();
+      summary.incAsError(remote.getIsdAs());
       summary.add(new Result(remote, Result.State.ERROR));
       return;
     }
@@ -264,28 +264,28 @@ public class PingAll {
       println();
     }
     if (msgs[0].isTimedOut()) {
-      summary.incAsTimeout();
+      summary.incAsTimeout(remote.getIsdAs());
     } else {
-      summary.incAsSuccess();
+      summary.incAsSuccess(remote.getIsdAs());
     }
   }
 
-  private Scmp.TimedMessage findPaths(List<Path> paths, Ref<Path> bestOut) {
+  private Scmp.TimedMessage findPaths(List<Path> paths, Ref<Path> bestOut, long isdAs) {
     switch (policy) {
       case FASTEST_TR:
-        return findFastestTR(paths, bestOut);
+        return findFastestTR(paths, bestOut, isdAs);
       case FASTEST_TR_ASYNC:
-        return findFastestTRasync(paths, bestOut);
+        return findFastestTRasync(paths, bestOut, isdAs);
       case SHORTEST_TR:
-        return findShortestTR(paths, bestOut);
+        return findShortestTR(paths, bestOut, isdAs);
       case SHORTEST_ECHO:
-        return findShortestEcho(paths, bestOut);
+        return findShortestEcho(paths, bestOut, isdAs);
       default:
         throw new UnsupportedOperationException();
     }
   }
 
-  private Scmp.EchoMessage findShortestEcho(List<Path> paths, Ref<Path> refBest) {
+  private Scmp.EchoMessage findShortestEcho(List<Path> paths, Ref<Path> refBest, long isdAs) {
     Path path = PathPolicy.MIN_HOPS.filter(paths).get(0);
     refBest.set(path);
     ByteBuffer bb = ByteBuffer.allocate(0);
@@ -302,12 +302,12 @@ public class PingAll {
       return msg;
     } catch (IOException e) {
       println("ERROR: " + e.getMessage());
-      summary.incAsError();
+      summary.incAsError(isdAs);
       return null;
     }
   }
 
-  private Scmp.TracerouteMessage findShortestTR(List<Path> paths, Ref<Path> refBest) {
+  private Scmp.TracerouteMessage findShortestTR(List<Path> paths, Ref<Path> refBest, long isdAs) {
     Path path = PathPolicy.MIN_HOPS.filter(paths).get(0);
     refBest.set(path);
     try (ScionProvider.Sync sender = service.getSync()) {
@@ -328,12 +328,12 @@ public class PingAll {
       return msg;
     } catch (IOException e) {
       println("ERROR: " + e.getMessage());
-      summary.incAsError();
+      summary.incAsError(isdAs);
       return null;
     }
   }
 
-  private Scmp.TracerouteMessage findFastestTR(List<Path> paths, Ref<Path> refBest) {
+  private Scmp.TracerouteMessage findFastestTR(List<Path> paths, Ref<Path> refBest, long isdAs) {
     Scmp.TracerouteMessage best = null;
     try (ScionProvider.Sync sender = service.getSync()) {
       for (Path path : paths) {
@@ -360,12 +360,13 @@ public class PingAll {
       return best;
     } catch (IOException e) {
       println("ERROR: " + e.getMessage());
-      summary.incAsError();
+      summary.incAsError(isdAs);
       return null;
     }
   }
 
-  private Scmp.TracerouteMessage findFastestTRasync(List<Path> paths, Ref<Path> refBest) {
+  private Scmp.TracerouteMessage findFastestTRasync(
+      List<Path> paths, Ref<Path> refBest, long isdAs) {
     ConcurrentHashMap<Integer, Scmp.TimedMessage> messages = new ConcurrentHashMap<>();
     CountDownLatch barrier = new CountDownLatch(paths.size());
     AtomicInteger errors = new AtomicInteger();
@@ -410,7 +411,7 @@ public class PingAll {
       }
     } catch (IOException e) {
       println("ERROR: " + e.getMessage());
-      summary.incAsError();
+      summary.incAsError(isdAs);
       return null;
     } catch (InterruptedException e) {
       Thread.currentThread().interrupt();
@@ -418,7 +419,7 @@ public class PingAll {
     }
 
     if (errors.get() > 0 && messages.isEmpty()) {
-      summary.incAsError();
+      summary.incAsError(isdAs);
       return null;
     }
 

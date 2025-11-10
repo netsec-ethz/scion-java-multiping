@@ -29,11 +29,16 @@ import org.scion.jpan.internal.PathRawParser;
 public class ResultSummary {
 
   private final List<Result> results = new ArrayList<>();
-  private int nAsTried = 0;
+  private int nIsdAsTried = 0;
   private int nAsSuccess = 0;
   private int nAsError = 0;
   private int nAsTimeout = 0;
   private int nAsNoPathFound = 0;
+  private final Set<Long> uniqueASes = new HashSet<>();
+  private final Set<Long> uniqueSuccess = new HashSet<>();
+  private final Set<Long> uniqueError = new HashSet<>();
+  private final Set<Long> uniqueTimeout = new HashSet<>();
+  private final Set<Long> uniqueNoPath = new HashSet<>();
 
   private int nPathTried = 0;
   private int nPathSuccess = 0;
@@ -49,24 +54,29 @@ public class ResultSummary {
   private int totalMaxPathsN = 0;
   private long totalMaxPathsIsdAs = 0;
 
-  public void incAsTried() {
-    nAsTried++;
+  public void incIsdAsTried(long isdAs) {
+    nIsdAsTried++;
+    uniqueASes.add(ScionUtil.extractAs(isdAs));
   }
 
-  public void incAsSuccess() {
+  public void incAsSuccess(long isdAs) {
     nAsSuccess++;
+    uniqueSuccess.add(isdAs);
   }
 
-  public void incAsError() {
+  public void incAsError(long isdAs) {
     nAsError++;
+    uniqueError.add(isdAs);
   }
 
-  public void incAsTimeout() {
+  public void incAsTimeout(long isdAs) {
     nAsTimeout++;
+    uniqueTimeout.add(isdAs);
   }
 
-  public void incAsNoPathFound() {
+  public void incAsNoPathFound(long isdAs) {
     nAsNoPathFound++;
+    uniqueNoPath.add(isdAs);
   }
 
   public void incPathTried() {
@@ -142,17 +152,18 @@ public class ResultSummary {
     println("Avg paths           =\t " + (int) round(avgPaths, 0));
 
     println("");
-    println("AS Stats:");
-    println(" all        =\t " + (nAsTried + 1)); // +1 for local AS
-    println(" success    =\t " + nAsSuccess);
-    println(" no path    =\t " + (nAsNoPathFound + 1)); // +1 for local AS
-    println(" timeout    =\t " + nAsTimeout);
-    println(" error      =\t " + nAsError);
-    println(" not listed =\t " + nSeenButNotListed);
+    println("AS Stats      \t Unique / \tISD-ASes");
+    // +1 for local AS
+    println(" ISD-ASes    =\t " + (uniqueASes.size() + 1) + " \t" + (nIsdAsTried + 1));
+    println(" success     =\t " + uniqueSuccess.size() + " \t" + nAsSuccess);
+    println(" no path     =\t " + uniqueNoPath.size() + " \t" + nAsNoPathFound);
+    println(" timeout     =\t " + uniqueTimeout.size() + " \t" + nAsTimeout);
+    println(" error       =\t " + uniqueError.size() + " \t" + nAsError);
+    println(" not listed  =\t " + nSeenButNotListed);
     println("Path Stats:");
-    println(" all        =\t " + nPathTried);
-    println(" success    =\t " + nPathSuccess);
-    println(" timeout    =\t " + nPathTimeout);
+    println(" all         =\t " + nPathTried);
+    println(" success     =\t " + nPathSuccess);
+    println(" timeout     =\t " + nPathTimeout);
     if (config.tryICMP) {
       println("ICMP Stats:");
       println(" all        =\t " + ICMP.nIcmpTried);
