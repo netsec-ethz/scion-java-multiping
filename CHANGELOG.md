@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 -- Nothing yet
 
+TODO
+- Why two arguments for bestMessage and bestPath for Result? The path should be in the message.
+- Report Worst paths!
+- Create Result inside async traceroute, not outside.
+- Publish
+  - bugfix use getSequenceNumber i.o. getIdentifier
+  - Use msg[i] to find best path
+  - Use \t in summary output
+- Investigate spurious 0-0:0 ASes in PingAll output
+
+
 ### Added
 
 - Added command line `--help` and several options to multi-ping.
@@ -27,6 +38,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 - PingAll did not report the best path.
   [#22](https://github.com/netsec-ethz/scion-java-multiping/pull/22)
+- Adapted parser to new Assignment website layout.
+  Distinguish ISD-AS vs unique AS.
+  [#25](https://github.com/netsec-ethz/scion-java-multiping/pull/25)
 
 ## [0.5.0] - 2025-09-09
 
