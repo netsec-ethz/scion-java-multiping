@@ -31,7 +31,7 @@ public class PingResponder {
     PRINT = config.consoleOutput;
 
     try (ScmpResponder responder =
-        Scmp.newResponderBuilder().setLocalPort(Constants.SCMP_PORT).build()) {
+        Scmp.newResponderBuilder().setLocalPort(config.getLocalPortOr30041()).build()) {
       responder.setScmpErrorListener(PingResponder::printError);
       responder.setOption(ScionSocketOptions.SCION_API_THROW_PARSER_FAILURE, true);
       responder.setScmpEchoListener(PingResponder::print);

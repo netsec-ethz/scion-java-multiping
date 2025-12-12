@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.scion.jpan.*;
 import org.scion.jpan.internal.PathRawParser;
+import org.scion.jpan.internal.Shim;
 import org.scion.multiping.util.*;
 
 /**
@@ -91,6 +92,8 @@ public class PingAll {
   public static void main(String[] argsArray) throws IOException {
     PRINT = true;
 
+    // Initialize port from config, but CLI overrides config file.
+    localPort = config.getLocalPortOr30041();
     Policy policy = parseArgs(argsArray);
 
     System.setProperty(Constants.PROPERTY_SHIM, startShim ? "true" : "false"); // disable SHIM
@@ -99,6 +102,8 @@ public class PingAll {
     println("  Path policy = " + policy);
     println("  ICMP=" + config.tryICMP);
     println("  printOnlyICMP=" + SHOW_ONLY_ICMP);
+    println("  Local port=" + localPort);
+    println("  JPAN SHIM active=" + Shim.isInstalled());
 
     long t1 = System.currentTimeMillis();
     PingAll pingAll = new PingAll(policy, ScionProvider.defaultProvider(localPort));
@@ -128,6 +133,7 @@ public class PingAll {
         case "--help":
           Main.printUsagePingAll();
           System.exit(0);
+          break;
         case "--shim":
           startShim = true;
           break;

@@ -25,8 +25,10 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
+
 import org.scion.jpan.*;
 import org.scion.jpan.internal.PathRawParser;
+import org.scion.jpan.internal.Shim;
 import org.scion.multiping.util.*;
 import org.scion.multiping.util.Record;
 
@@ -54,6 +56,7 @@ public class PingRepeat {
   private int nPingSuccess = 0;
   private int nPingTimeout = 0;
   private int nPingError = 0;
+  private static int localPort = -1;
 
   private static Config config;
   private static FileWriter fileWriter;
@@ -61,7 +64,7 @@ public class PingRepeat {
   private static final boolean SHOW_PATH = true;
 
   public PingRepeat() throws UnknownHostException {
-    this.dummyIP = new InetSocketAddress(InetAddress.getByAddress(new byte[] {1, 2, 3, 4}), 12345);
+    this.dummyIP = new InetSocketAddress(InetAddress.getByAddress(new byte[]{1, 2, 3, 4}), 12345);
   }
 
   public static void main(String[] args) throws IOException {
@@ -69,6 +72,11 @@ public class PingRepeat {
 
     config = Config.read(FILE_CONFIG);
     PRINT = config.consoleOutput;
+
+    localPort = config.hasLocalPort() ? config.localPort : -1;
+    println("Settings");
+    println(" Listening on port: " + localPort);
+    println(" JPAN SHIM is running: " + Shim.isInstalled());
 
     // Output: ISD/AS, remote IP, time, hopCount, path, [pings]
     fileWriter = new FileWriter(config.outputFile);
@@ -161,7 +169,7 @@ public class PingRepeat {
     Record best = null;
     double currentBestMs = Double.MAX_VALUE;
     ResponseHandler handler = new ResponseHandler();
-    try (ScmpSenderAsync sender = Scmp.newSenderAsyncBuilder(handler).build()) {
+    try (ScmpSenderAsync sender = Scmp.newSenderAsyncBuilder(handler).setLocalPort(localPort).build()) {
       for (int attemptCount = 0; attemptCount < config.attemptRepeatCnt; attemptCount++) {
         Instant start = Instant.now();
         Map<Integer, Record> seqToPathMap = new HashMap<>();
