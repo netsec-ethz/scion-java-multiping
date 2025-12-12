@@ -26,7 +26,9 @@ TODO
   [#20](https://github.com/netsec-ethz/scion-java-multiping/pull/20)
 - Added output of global maxima (longest path, ...)
   [#24](https://github.com/netsec-ethz/scion-java-multiping/pull/24)
-
+- Added output and config of local port 
+  [#26](https://github.com/netsec-ethz/scion-java-multiping/pull/26)
+- 
 ### Changed
 
 - Output summary uses `\t` whitespaces for easier copying.

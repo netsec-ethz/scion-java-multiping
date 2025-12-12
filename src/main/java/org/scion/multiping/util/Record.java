@@ -199,6 +199,10 @@ public class Record {
       return pingMs;
     }
 
+    public State getState() {
+      return state;
+    }
+
     @Override
     public String toString() {
       return "  time=" + round(pingMs, 2) + "ms";

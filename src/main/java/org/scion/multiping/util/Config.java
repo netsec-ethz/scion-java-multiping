@@ -18,6 +18,7 @@ import com.google.gson.Gson;
 import java.io.*;
 
 public class Config {
+  private static final int PORT_NOT_SET = -1;
   public int attemptRepeatCnt = 5;
   public int attemptDelayMs = 100;
   public int roundRepeatCnt = 144; // 1 day
@@ -26,15 +27,23 @@ public class Config {
   public boolean tryICMP = false;
   public String isdAsInputFile;
   public String outputFile;
-  public int localPort = 30041;
+  public int localPort = PORT_NOT_SET;
   public boolean consoleOutput = true;
+
+  public boolean hasLocalPort() {
+    return localPort != PORT_NOT_SET;
+  }
+
+  public int getLocalPortOr30041() {
+    return hasLocalPort() ? localPort : 30041;
+  }
 
   public static Config read(String path) {
     Gson gson = new Gson();
     try (Reader reader = new FileReader(path)) {
       return gson.fromJson(reader, Config.class);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new IllegalArgumentException(e);
     }
   }
 
@@ -47,7 +56,7 @@ public class Config {
     try (Writer writer = new FileWriter(path)) {
       gson.toJson(this, writer);
     } catch (IOException e) {
-      throw new RuntimeException(e);
+      throw new IllegalArgumentException(e);
     }
   }
 }
