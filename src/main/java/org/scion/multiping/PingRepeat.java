@@ -25,7 +25,6 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
-
 import org.scion.jpan.*;
 import org.scion.jpan.internal.PathRawParser;
 import org.scion.jpan.internal.Shim;
@@ -64,7 +63,7 @@ public class PingRepeat {
   private static final boolean SHOW_PATH = true;
 
   public PingRepeat() throws UnknownHostException {
-    this.dummyIP = new InetSocketAddress(InetAddress.getByAddress(new byte[]{1, 2, 3, 4}), 12345);
+    this.dummyIP = new InetSocketAddress(InetAddress.getByAddress(new byte[] {1, 2, 3, 4}), 12345);
   }
 
   public static void main(String[] args) throws IOException {
@@ -172,7 +171,8 @@ public class PingRepeat {
     Record best = null;
     double currentBestMs = Double.MAX_VALUE;
     ResponseHandler handler = new ResponseHandler();
-    try (ScmpSenderAsync sender = Scmp.newSenderAsyncBuilder(handler).setLocalPort(localPort).build()) {
+    try (ScmpSenderAsync sender =
+        Scmp.newSenderAsyncBuilder(handler).setLocalPort(localPort).build()) {
       for (int attemptCount = 0; attemptCount < config.attemptRepeatCnt; attemptCount++) {
         Instant start = Instant.now();
         Map<Integer, Record> seqToPathMap = new HashMap<>();
