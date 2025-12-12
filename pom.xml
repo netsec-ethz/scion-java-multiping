@@ -11,7 +11,7 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 
-        <scion.slf4j.version>2.0.16</scion.slf4j.version>
+        <scion.slf4j.version>2.0.17</scion.slf4j.version>
         <scion.fmt-maven.version>2.23</scion.fmt-maven.version>
         <scion.maven-enforcer-plugin.version>3.5.0</scion.maven-enforcer-plugin.version>
     </properties>
@@ -70,20 +70,20 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
-            <version>5.10.3</version>
+            <version>5.14.1</version>
             <scope>test</scope>
         </dependency>
 
         <dependency>
             <groupId>com.google.googlejavaformat</groupId>
             <artifactId>google-java-format</artifactId>
-            <version>1.26.0</version>
+            <version>1.33.0</version>
         </dependency>
 
         <dependency>
             <groupId>org.scion</groupId>
             <artifactId>jpan</artifactId>
-            <version>0.5.3</version>
+            <version>0.6.0</version>
         </dependency>
 
         <dependency>
@@ -95,13 +95,13 @@
         <dependency>
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
-            <version>1.17.2</version>
+            <version>1.21.2</version>
         </dependency>
 
         <dependency>
             <groupId>com.google.code.gson</groupId>
             <artifactId>gson</artifactId>
-            <version>2.13.1</version>
+            <version>2.13.2</version>
         </dependency>
     </dependencies>
 
