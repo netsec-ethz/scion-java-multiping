@@ -68,8 +68,6 @@ public class PingRepeat {
   }
 
   public static void main(String[] args) throws IOException {
-    // System.setProperty(Constants.PROPERTY_DNS_SEARCH_DOMAINS, "ethz.ch.");
-
     config = Config.read(FILE_CONFIG);
     PRINT = config.consoleOutput;
 
@@ -149,7 +147,12 @@ public class PingRepeat {
     // output
     int nHops = PathRawParser.create(rec.getPath().getRawPath()).getHopCount();
     String out = rec.getRemoteIP() + "  nPaths=" + nPaths + "  nHops=" + nHops;
-    out += "  time=" + bestAttempt.get().getPingMs() + "ms" + "  ICMP=" + icmpMs;
+    if (bestAttempt.get().getState() == Record.Attempt.State.SUCCESS) {
+      out += "  time=" + bestAttempt.get().getPingMs() + "ms";
+    } else {
+      out += "  time=" + bestAttempt.get().getState();
+    }
+    out += "  ICMP=" + icmpMs;
     if (SHOW_PATH) {
       out += "  " + ScionUtil.toStringPath(rec.getPath().getMetadata());
     }
