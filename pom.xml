@@ -6,7 +6,7 @@
 
     <groupId>org.scion</groupId>
     <artifactId>scion-multiping</artifactId>
-    <version>0.6.1-SNAPSHOT</version>
+    <version>0.6.2-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -83,7 +83,7 @@
         <dependency>
             <groupId>org.scion</groupId>
             <artifactId>jpan</artifactId>
-            <version>0.6.0</version>
+            <version>0.6.1</version>
         </dependency>
 
         <dependency>
