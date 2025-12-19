@@ -23,6 +23,8 @@ TODO
 
 - Fixed mangled output with mode SHOW_SCMP_ONLY
   [#31](https://github.com/netsec-ethz/scion-java-multiping/pull/31)
+- Fixed occurrence of ISD=0 / "AS not listed"
+  [#32](https://github.com/netsec-ethz/scion-java-multiping/pull/32)
 
 ## [0.6.1] - 2025-12-12
 
