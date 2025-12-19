@@ -14,6 +14,8 @@
 
 package org.scion.multiping.util;
 
+import static org.scion.multiping.util.Util.*;
+
 import com.google.common.util.concurrent.AtomicDouble;
 import com.zaxxer.ping.FailureReason;
 import com.zaxxer.ping.IcmpPinger;
@@ -23,8 +25,6 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import org.jetbrains.annotations.NotNull;
-
-import static org.scion.multiping.util.Util.*;
 
 public class ICMP {
   public static int nIcmpTried = 0;
@@ -60,7 +60,8 @@ public class ICMP {
     PingResponseHandler handler =
         new PingResponseHandler() {
           @Override
-          public void onFailure(@NotNull PingTarget pingTarget, @NotNull FailureReason failureReason) {
+          public void onFailure(
+              @NotNull PingTarget pingTarget, @NotNull FailureReason failureReason) {
             if (!FailureReason.TimedOut.equals(failureReason)) {
               println("ICMP failed: " + failureReason);
             }
