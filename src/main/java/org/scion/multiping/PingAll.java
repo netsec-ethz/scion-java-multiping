@@ -196,7 +196,9 @@ public class PingAll {
       if (paths.isEmpty()) {
         String src = ScionUtil.toStringIA(service.getLocalIsdAs());
         String dst = ScionUtil.toStringIA(remote.getIsdAs());
-        if (!SHOW_ONLY_ICMP) {
+        if (SHOW_ONLY_ICMP) {
+          clearPrintQueue();
+        } else {
           println("WARNING: No path found from " + src + " to " + dst);
         }
         summary.incAsNoPathFound(remote.getIsdAs());
@@ -231,6 +233,7 @@ public class PingAll {
     summary.add(result);
 
     if (msgs[0] == null) {
+      clearPrintQueue();
       return;
     }
 
