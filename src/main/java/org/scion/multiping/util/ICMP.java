@@ -14,10 +14,8 @@
 
 package org.scion.multiping.util;
 
-import static org.scion.multiping.util.Util.round;
-import static org.scion.multiping.util.Util.sleep;
-
 import com.google.common.util.concurrent.AtomicDouble;
+import com.zaxxer.ping.FailureReason;
 import com.zaxxer.ping.IcmpPinger;
 import com.zaxxer.ping.PingResponseHandler;
 import com.zaxxer.ping.PingTarget;
@@ -25,6 +23,8 @@ import java.net.Inet4Address;
 import java.net.Inet6Address;
 import java.net.InetAddress;
 import org.jetbrains.annotations.NotNull;
+
+import static org.scion.multiping.util.Util.*;
 
 public class ICMP {
   public static int nIcmpTried = 0;
@@ -60,13 +60,16 @@ public class ICMP {
     PingResponseHandler handler =
         new PingResponseHandler() {
           @Override
-          public void onResponse(@NotNull PingTarget pingTarget, double v, int i, int i1) {
-            seconds.set(v);
+          public void onFailure(@NotNull PingTarget pingTarget, @NotNull FailureReason failureReason) {
+            if (!FailureReason.TimedOut.equals(failureReason)) {
+              println("ICMP failed: " + failureReason);
+            }
+            seconds.set(-1);
           }
 
           @Override
-          public void onTimeout(@NotNull PingTarget pingTarget) {
-            seconds.set(-1);
+          public void onResponse(@NotNull PingTarget pingTarget, double v, int i, int i1) {
+            seconds.set(v);
           }
         };
 
@@ -74,6 +77,7 @@ public class ICMP {
     PingTarget target = new PingTarget(address);
     Thread t = new Thread(pinger::runSelector);
     t.start();
+    sleep(50);
     nIcmpTried++;
 
     pinger.ping(target);
