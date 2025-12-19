@@ -436,7 +436,6 @@ public class PingAll {
     for (Scmp.TimedMessage tm : messages.values()) {
       Scmp.TracerouteMessage msg = (Scmp.TracerouteMessage) tm;
       summary.checkTotalMax(msg.getIsdAs(), msg);
-      seenAs.add(msg.getIsdAs());
 
       if (msg.isTimedOut()) {
         summary.incPathTimeout();
@@ -446,6 +445,7 @@ public class PingAll {
         continue;
       }
 
+      seenAs.add(msg.getIsdAs());
       summary.incPathSuccess();
 
       if (best == null || msg.getNanoSeconds() < best.getNanoSeconds()) {
