@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.scion.jpan.*;
-import org.scion.jpan.internal.PathRawParser;
+import org.scion.jpan.internal.header.PathRawParser;
 import org.scion.jpan.internal.Shim;
 import org.scion.multiping.util.*;
 
@@ -96,6 +96,7 @@ public class PingAll {
     localPort = config.getLocalPortOr30041();
     Policy policy = parseArgs(argsArray);
 
+    System.setProperty(Constants.PROPERTY_BOOTSTRAP_PATH_SERVICE, "192.168.53.19:48080");
     System.setProperty(Constants.PROPERTY_SHIM, startShim ? "true" : "false"); // disable SHIM
 
     println("Settings:");
@@ -216,7 +217,7 @@ public class PingAll {
               List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(bestPath.get());
               msgs[i] = messages.get(messages.size() - 1);
             } catch (IOException e) {
-              msgs[i] = Scmp.TracerouteMessage.createEmpty(bestPath.get());
+              msgs[i] = Scmp.TracerouteMessage.createRequest(-1, bestPath.get());
               msgs[i].setTimedOut(1_000_000_000);
             }
           }

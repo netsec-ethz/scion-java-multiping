@@ -24,7 +24,7 @@ import java.util.function.ToDoubleFunction;
 import java.util.stream.Collectors;
 import org.scion.jpan.ScionUtil;
 import org.scion.jpan.Scmp;
-import org.scion.jpan.internal.PathRawParser;
+import org.scion.jpan.internal.header.PathRawParser;
 
 public class ResultSummary {
 

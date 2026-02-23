@@ -15,15 +15,18 @@ TODO
 
 ### Fixed
 
-- Fixed error handling for additional rounds. Cleanup.
-  [#32](https://github.com/netsec-ethz/scion-java-multiping/pull/32)
-
-### Fixed
-
 - Fixed mangled output with mode SHOW_SCMP_ONLY
   [#31](https://github.com/netsec-ethz/scion-java-multiping/pull/31)
 - Fixed occurrence of ISD=0 / "AS not listed"
   [#32](https://github.com/netsec-ethz/scion-java-multiping/pull/32)
+- Fixed error handling for additional rounds. Cleanup.
+  [#33](https://github.com/netsec-ethz/scion-java-multiping/pull/33)
+
+### Changed
+
+- Refactored for JPAN 1.6.2 and Use new endhost API.
+  [#33](https://github.com/netsec-ethz/scion-java-multiping/pull/33)
+
 
 ## [0.6.1] - 2025-12-12
 
