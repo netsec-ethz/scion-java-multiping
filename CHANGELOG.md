@@ -25,7 +25,7 @@ TODO
 ### Changed
 
 - Refactored for JPAN 1.6.2 and Use new endhost API.
-  [#33](https://github.com/netsec-ethz/scion-java-multiping/pull/33)
+  [#34](https://github.com/netsec-ethz/scion-java-multiping/pull/34)
 
 
 ## [0.6.1] - 2025-12-12
