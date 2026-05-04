@@ -125,7 +125,7 @@ class PingAllTest {
     ScionProvider p =
         ScionProvider.createSync(
             () -> new MySync(3),
-            MyWithHandler::new,
+            h -> new MyWithHandler(h),
             Helper::isdAsList,
             () -> Long.valueOf(0),
             (ia, addr) -> PathHelper.createPaths(3));
@@ -155,7 +155,7 @@ class PingAllTest {
     ScionProvider p =
         ScionProvider.createSync(
             () -> new MySync(3),
-            MyWithHandler::new,
+            h -> new MyWithHandler(h),
             Helper::isdAsList,
             () -> Long.valueOf(0),
             (ia, addr) -> PathHelper.createPaths(3));
@@ -176,7 +176,7 @@ class PingAllTest {
     ScionProvider p =
         ScionProvider.createSync(
             () -> new MySync(3),
-            MyWithHandler::new,
+            h -> new MyWithHandler(h),
             Helper::isdAsList,
             () -> Long.valueOf(0),
             (ia, addr) -> PathHelper.createPaths(3));
