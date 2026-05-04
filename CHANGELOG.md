@@ -13,6 +13,8 @@ TODO
 - Why two arguments for bestMessage and bestPath for Result? The path should be in the message.
 - Create Result inside async traceroute, not outside.
 
+## [0.7.0] - 2025-05-04
+
 ### Fixed
 
 - Fixed mangled output with mode SHOW_SCMP_ONLY
@@ -143,7 +145,8 @@ TODO
 
 - Nothing
 
-[Unreleased]: https://github.com/netsec-ethz/scion-java-multiping/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/netsec-ethz/scion-java-multiping/compare/v0.7.0...HEAD
+[0.7.0]: https://github.com/netsec-ethz/scion-java-multiping/compare/v0.6.1...v0.7.0
 [0.6.1]: https://github.com/netsec-ethz/scion-java-multiping/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/netsec-ethz/scion-java-multiping/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/netsec-ethz/scion-java-multiping/compare/v0.4.0...v0.5.0
