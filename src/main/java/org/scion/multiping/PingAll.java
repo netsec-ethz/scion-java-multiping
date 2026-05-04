@@ -27,8 +27,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import org.scion.jpan.*;
-import org.scion.jpan.internal.header.PathRawParser;
 import org.scion.jpan.internal.Shim;
+import org.scion.jpan.internal.header.PathRawParser;
 import org.scion.multiping.util.*;
 
 /**
@@ -97,7 +97,7 @@ public class PingAll {
     Policy policy = parseArgs(argsArray);
 
     System.setProperty(Constants.PROPERTY_BOOTSTRAP_PATH_SERVICE, "192.168.53.19:48080");
-    System.setProperty(Constants.PROPERTY_SHIM, startShim ? "true" : "false"); // disable SHIM
+    System.setProperty(Constants.PROPERTY_SHIM, Boolean.toString(startShim)); // disable SHIM
 
     println("Settings:");
     println("  Path policy = " + policy);
@@ -213,18 +213,13 @@ public class PingAll {
       if (msgs[0] != null && bestPath.get() != null && REPEAT > 1) {
         try (ScionProvider.Sync sender = service.getSync()) {
           for (int i = 1; i < msgs.length; i++) {
-            try {
-              List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(bestPath.get());
-              msgs[i] = messages.get(messages.size() - 1);
-            } catch (IOException e) {
-              msgs[i] = Scmp.TracerouteMessage.createRequest(-1, bestPath.get());
-              msgs[i].setTimedOut(1_000_000_000);
-            }
+            List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(bestPath.get());
+            msgs[i] = messages.get(messages.size() - 1);
           }
         }
       }
     } catch (ScionRuntimeException e) {
-      println("ERROR: " + e.getMessage());
+      printlnERROR(e.getMessage());
       summary.incAsError(remote.getIsdAs());
       summary.add(new Result(remote, Result.State.ERROR));
       return;
@@ -316,7 +311,7 @@ public class PingAll {
       summary.incPathSuccess();
       return msg;
     } catch (IOException e) {
-      println("ERROR: " + e.getMessage());
+      printlnERROR(e.getMessage());
       summary.incAsError(isdAs);
       return null;
     }
@@ -342,7 +337,7 @@ public class PingAll {
       summary.incPathSuccess();
       return msg;
     } catch (IOException e) {
-      println("ERROR: " + e.getMessage());
+      printlnERROR(e.getMessage());
       summary.incAsError(isdAs);
       return null;
     }
@@ -374,7 +369,7 @@ public class PingAll {
       }
       return best;
     } catch (IOException e) {
-      println("ERROR: " + e.getMessage());
+      printlnERROR(e.getMessage());
       summary.incAsError(isdAs);
       return null;
     }
@@ -394,7 +389,7 @@ public class PingAll {
       // Wait for all messages to be received, BEFORE closing the "sender".
       handler.await();
     } catch (IOException e) {
-      println("ERROR: " + e.getMessage());
+      printlnERROR(e.getMessage());
       summary.incAsError(isdAs);
       return null;
     }

@@ -26,8 +26,8 @@ import java.time.Instant;
 import java.util.*;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import org.scion.jpan.*;
-import org.scion.jpan.internal.header.PathRawParser;
 import org.scion.jpan.internal.Shim;
+import org.scion.jpan.internal.header.PathRawParser;
 import org.scion.multiping.util.*;
 import org.scion.multiping.util.Record;
 
@@ -121,7 +121,7 @@ public class PingRepeat {
     try {
       List<Path> paths = service.getPaths(remote.getIsdAs(), dstIP);
       if (paths.isEmpty()) {
-        String src = ScionUtil.toStringIA(service.getLocalIsdAs());
+        String src = ScionUtil.toStringIA(service.getLocalIsdAses().iterator().next());
         String dst = ScionUtil.toStringIA(remote.getIsdAs());
         println("WARNING: No path found from " + src + " to " + dst);
         Record.createNoPathRecord(remote.getIsdAs(), fileWriter);
