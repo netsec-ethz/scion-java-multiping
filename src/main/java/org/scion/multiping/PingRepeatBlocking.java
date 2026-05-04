@@ -25,7 +25,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import org.scion.jpan.*;
-import org.scion.jpan.internal.PathRawParser;
+import org.scion.jpan.internal.header.PathRawParser;
 import org.scion.multiping.util.*;
 import org.scion.multiping.util.Record;
 

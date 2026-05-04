@@ -20,6 +20,8 @@ public class Util {
   public static boolean DELAYED_PRINT = false; // print only at newlines
   private static final StringBuilder sb = new StringBuilder();
 
+  private Util() {}
+
   public static void sleep(long millis) {
     try {
       Thread.sleep(millis);
@@ -42,6 +44,10 @@ public class Util {
   public static void println(String msg) {
     print(msg);
     println();
+  }
+
+  public static void printlnERROR(String msg) {
+    println("ERROR: " + msg);
   }
 
   public static void println() {

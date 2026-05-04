@@ -78,8 +78,7 @@ class PingAllTest {
 
     @Override
     public Scmp.EchoMessage sendEchoRequest(Path path, ByteBuffer bb) throws IOException {
-      Scmp.EchoMessage msg = Scmp.EchoMessage.createEmpty(path);
-      msg.setMessageArgs(Scmp.TypeCode.TYPE_129, seqId++, seqId);
+      Scmp.EchoMessage msg = Scmp.EchoMessage.create(Scmp.TypeCode.TYPE_129, seqId++, seqId, path);
       msg.assignRequest(msg, 1_000_000); // Hack: assign to itself
       return msg;
     }
@@ -98,7 +97,9 @@ class PingAllTest {
     }
 
     @Override
-    public void close() {}
+    public void close() {
+      /* Nothing to do */
+    }
   }
 
   @Test
@@ -110,9 +111,9 @@ class PingAllTest {
             handler,
             hdl -> {
               for (int i = 0; i < 3; i++) {
-                Scmp.TimedMessage req = Scmp.TracerouteMessage.createRequest(i, paths.get(i));
-                Scmp.TimedMessage msg = Scmp.TracerouteMessage.createEmpty(paths.get(i));
-                msg.setMessageArgs(Scmp.TypeCode.TYPE_131, i, i);
+                Scmp.TracerouteMessage req = Scmp.TracerouteMessage.createRequest(i, paths.get(i));
+                Scmp.TracerouteMessage msg =
+                    Scmp.TracerouteMessage.create(Scmp.TypeCode.TYPE_131, i, i, paths.get(i));
                 msg.assignRequest(req, 1_000_000); // Hack: assign to itself
                 msg.setTimedOut(1000 * 1000 * 1000);
                 hdl.onTimeout(msg);
@@ -144,7 +145,7 @@ class PingAllTest {
             hdl -> {
               for (int i = 0; i < 3; i++) {
                 Scmp.ErrorMessage msg =
-                    Scmp.ErrorMessage.createEmpty(Scmp.TypeCode.TYPE_5, paths.get(i));
+                    Scmp.ErrorMessage.create(Scmp.TypeCode.TYPE_5, paths.get(i));
                 hdl.onError(msg);
               }
             });
