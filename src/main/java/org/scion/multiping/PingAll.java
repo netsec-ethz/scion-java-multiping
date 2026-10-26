@@ -49,6 +49,9 @@ import org.scion.multiping.util.*;
  * all available paths before it can report on the best path.
  */
 public class PingAll {
+  // Traceroute interval milliseconds
+  private static final int TR_INTERVAL_MS = 5;
+  private static final boolean RUN_TIMEOUT_ANALYZER = false;
   private static final int REPEAT = 3;
   private static final boolean SHOW_ONLY_ICMP = false;
   private static final Config config = new Config();
@@ -69,6 +72,8 @@ public class PingAll {
 
   private final ScionProvider service;
   private final Policy policy;
+
+  private final List<Path> timeouts = new ArrayList<>();
 
   enum Policy {
     /** Fastest path using SCMP traceroute */
@@ -95,12 +100,12 @@ public class PingAll {
     // Initialize port from config, but CLI overrides config file.
     localPort = config.getLocalPortOr30041();
     Policy policy = parseArgs(argsArray);
-
-    System.setProperty(Constants.PROPERTY_BOOTSTRAP_PATH_SERVICE, "192.168.53.19:48080");
+    // System.setProperty(Constants.PROPERTY_BOOTSTRAP_HOST, "31.130.239.184");
+    // System.setProperty(Constants.PROPERTY_BOOTSTRAP_PATH_SERVICE, "192.168.53.19:48080");
     System.setProperty(Constants.PROPERTY_SHIM, Boolean.toString(startShim)); // disable SHIM
 
     println("Settings:");
-    println("  Path policy = " + policy);
+    println("  Probing type = " + policy);
     println("  ICMP=" + config.tryICMP);
     println("  printOnlyICMP=" + SHOW_ONLY_ICMP);
     println("  Local port=" + localPort);
@@ -112,6 +117,11 @@ public class PingAll {
     pingAll.summary.prettyPrint(config);
     long t2 = System.currentTimeMillis();
     println("Total time: " + round((t2 - t1) / 1000.0, 2) + "s");
+
+    if (RUN_TIMEOUT_ANALYZER) {
+      println();
+      TimeoutAnalyzer.analyze(pingAll.timeouts);
+    }
   }
 
   private static Policy parseArgs(String[] argsArray) {
@@ -218,7 +228,7 @@ public class PingAll {
           }
         }
       }
-    } catch (ScionRuntimeException e) {
+    } catch (ScionRuntimeException | IOException e) {
       printlnERROR(e.getMessage());
       summary.incAsError(remote.getIsdAs());
       summary.add(new Result(remote, Result.State.ERROR));
@@ -383,6 +393,7 @@ public class PingAll {
     try (ScionProvider.Async sender = service.getAsync(handler)) {
       for (Path path : paths) {
         summary.incPathTried();
+        Util.sleep(TR_INTERVAL_MS);
         sender.sendTracerouteLast(path);
       }
 
@@ -406,6 +417,7 @@ public class PingAll {
 
       if (msg.isTimedOut()) {
         summary.incPathTimeout();
+        timeouts.add(msg.getPath());
         if (best == null) {
           best = msg;
         }

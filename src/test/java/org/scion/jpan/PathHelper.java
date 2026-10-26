@@ -15,9 +15,11 @@
 package org.scion.jpan;
 
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
+import org.scion.jpan.internal.util.IPHelper;
 
 public class PathHelper {
 
@@ -32,7 +34,8 @@ public class PathHelper {
       builder.setDstIsdAs(n + 1);
       try {
         InetAddress dst = InetAddress.getByAddress(new byte[] {123, 123, 123, 123});
-        paths.add(RequestPath.create(builder.build(), dst, 12345));
+        InetSocketAddress firstHop = IPHelper.toInetSocketAddress("127.0.0.1:32323");
+        paths.add(RequestPath.create(builder.build(), dst, 12345, firstHop));
       } catch (UnknownHostException e) {
         throw new ScionRuntimeException("Unable to create test path", e);
       }
