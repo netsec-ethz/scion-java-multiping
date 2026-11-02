@@ -83,7 +83,7 @@ public class ScionProvider {
   private final Supplier<Sync> senderSupplier;
   private final Function<ScmpSenderAsync.ResponseHandler, Async> senderAsyncSupplier;
   private final Supplier<List<ParseAssignments.HostEntry>> assignmentSupplier;
-  private final Supplier<Long> localIsdAsSupplier;
+  private final Supplier<List<Long>> localIsdAsSupplier;
   private final BiFunction<Long, InetSocketAddress, List<Path>> localDefaultPathsSupplier;
 
   public static ScionProvider defaultProvider(int localPort) {
@@ -92,7 +92,7 @@ public class ScionProvider {
         handler ->
             new AsyncDefault(Scmp.newSenderAsyncBuilder(handler).setLocalPort(localPort).build()),
         DownloadAssignmentsFromWeb::getList,
-        () -> Scion.defaultService().getLocalIsdAs(),
+        () -> Scion.defaultService().getLocalIsdAsList(),
         (isdAs, address) -> Scion.defaultService().getPaths(isdAs, address));
   }
 
@@ -100,7 +100,7 @@ public class ScionProvider {
       Supplier<Sync> senderSupplier,
       Function<ScmpSenderAsync.ResponseHandler, Async> senderAsyncSupplier,
       Supplier<List<ParseAssignments.HostEntry>> assignmentSupplier,
-      Supplier<Long> localIsdAsSupplier,
+      Supplier<List<Long>> localIsdAsSupplier,
       BiFunction<Long, InetSocketAddress, List<Path>> localDefaultPathsSupplier) {
     return new ScionProvider(
         senderSupplier,
@@ -114,7 +114,7 @@ public class ScionProvider {
       Supplier<Sync> senderSupplier,
       Function<ScmpSenderAsync.ResponseHandler, Async> senderAsyncSupplier,
       Supplier<List<ParseAssignments.HostEntry>> assignmentSupplier,
-      Supplier<Long> localIsdAsSupplier,
+      Supplier<List<Long>> localIsdAsSupplier,
       BiFunction<Long, InetSocketAddress, List<Path>> localDefaultPathsSupplier) {
     this.assignmentSupplier = assignmentSupplier;
     this.senderSupplier = senderSupplier;
@@ -139,7 +139,7 @@ public class ScionProvider {
     return localDefaultPathsSupplier.apply(isdAs, destinationAddress);
   }
 
-  public long getLocalIsdAs() {
+  public List<Long> getLocalIsdAsList() {
     return localIsdAsSupplier.get();
   }
 }

@@ -26,6 +26,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
+
 import org.scion.jpan.*;
 import org.scion.jpan.internal.Shim;
 import org.scion.jpan.internal.header.PathRawParser;
@@ -76,13 +77,21 @@ public class PingAll {
   private final List<Path> timeouts = new ArrayList<>();
 
   enum Policy {
-    /** Fastest path using SCMP traceroute */
+    /**
+     * Fastest path using SCMP traceroute
+     */
     FASTEST_TR,
-    /** Fastest path using SCMP async traceroute */
+    /**
+     * Fastest path using SCMP async traceroute
+     */
     FASTEST_TR_ASYNC,
-    /** Shortest path using SCMP traceroute */
+    /**
+     * Shortest path using SCMP traceroute
+     */
     SHORTEST_TR,
-    /** Fastest path using SCMP echo */
+    /**
+     * Fastest path using SCMP echo
+     */
     SHORTEST_ECHO
   }
 
@@ -176,8 +185,8 @@ public class PingAll {
   ResultSummary run() throws IOException {
     List<ParseAssignments.HostEntry> allASes = service.getIsdAsEntries();
     // remove entry for local AS
-    long localAS = service.getLocalIsdAs();
-    allASes = allASes.stream().filter(e -> e.getIsdAs() != localAS).collect(Collectors.toList());
+    List<Long> localASes = service.getLocalIsdAsList();
+    allASes = allASes.stream().filter(e -> !localASes.contains(e.getIsdAs())).collect(Collectors.toList());
     // Process all ASes
     for (ParseAssignments.HostEntry e : allASes) {
       print(ScionUtil.toStringIA(e.getIsdAs()) + "\t \"" + e.getName() + "\"\t  ");
@@ -198,19 +207,19 @@ public class PingAll {
     summary.incIsdAsTried(remote.getIsdAs());
     // Dummy address. The traceroute will contact the control service IP instead.
     InetSocketAddress destinationAddress =
-        new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 30041);
+            new InetSocketAddress(InetAddress.getByAddress(new byte[]{0, 0, 0, 0}), 30041);
     int nPaths;
     Scmp.TimedMessage[] msgs = new Scmp.TimedMessage[REPEAT];
     Ref<Path> bestPath = Ref.empty();
     try {
       List<Path> paths = service.getPaths(remote.getIsdAs(), destinationAddress);
       if (paths.isEmpty()) {
-        String src = ScionUtil.toStringIA(service.getLocalIsdAs());
+        String src = ScionUtil.toStringIAs(service.getLocalIsdAsList());
         String dst = ScionUtil.toStringIA(remote.getIsdAs());
         if (SHOW_ONLY_ICMP) {
           clearPrintQueue();
         } else {
-          println("WARNING: No path found from " + src + " to " + dst);
+          println("WARNING: No path found from [" + src + "] to " + dst);
         }
         summary.incAsNoPathFound(remote.getIsdAs());
         summary.add(new Result(remote, Result.State.NO_PATH));
@@ -386,7 +395,7 @@ public class PingAll {
   }
 
   private Scmp.TracerouteMessage findFastestTraceAsync(
-      List<Path> paths, Ref<Path> refBest, long isdAs) {
+          List<Path> paths, Ref<Path> refBest, long isdAs) {
     PingResponseHandler handler = new PingResponseHandler(paths.size());
 
     // Send all requests
