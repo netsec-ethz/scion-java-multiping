@@ -15,6 +15,8 @@ TODO
 
 - Added probing interval and timeout analyzer. Upgraded to JPAN 0.8.0.
   [#36](https://github.com/netsec-ethz/scion-java-multiping/pull/36)
+- Upgraded to JPAN 0.8.1, moved to new JPAN API.
+  [#38](https://github.com/netsec-ethz/scion-java-multiping/pull/38)
 
 ## [0.7.0] - 2025-05-04
 

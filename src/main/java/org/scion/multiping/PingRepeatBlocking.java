@@ -143,9 +143,9 @@ public class PingRepeatBlocking {
     try {
       List<Path> paths = service.getPaths(remote.getIsdAs(), destinationAddress);
       if (paths.isEmpty()) {
-        String src = ScionUtil.toStringIA(service.getLocalIsdAs());
+        String src = ScionUtil.toStringIAs(service.getLocalIsdAsList());
         String dst = ScionUtil.toStringIA(remote.getIsdAs());
-        println("WARNING: No path found from " + src + " to " + dst);
+        println("WARNING: No path found from [" + src + "] to " + dst);
         nAsNoPathFound++;
         results.add(new Result(remote, Result.State.NO_PATH));
         return;

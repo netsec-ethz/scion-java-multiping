@@ -121,9 +121,9 @@ public class PingRepeat {
     try {
       List<Path> paths = service.getPaths(remote.getIsdAs(), dstIP);
       if (paths.isEmpty()) {
-        String src = ScionUtil.toStringIA(service.getLocalIsdAsList().get(0));
+        String src = ScionUtil.toStringIAs(service.getLocalIsdAsList());
         String dst = ScionUtil.toStringIA(remote.getIsdAs());
-        println("WARNING: No path found from " + src + " to " + dst);
+        println("WARNING: No path found from [" + src + "] to " + dst);
         Record.createNoPathRecord(remote.getIsdAs(), fileWriter);
         return;
       }
