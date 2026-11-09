@@ -39,7 +39,7 @@ parses [Anapayas ISD/AS assignment website](https://docs.anapaya.net/en/latest/r
 and writes the result to a local file `isd-as-assignments.csv`.
 Note: the `isd-as-assignments.csv` output file can be directly used as input file for the PingRepeat
 
-# Ping All
+# Traceroute All & Ping All
 
 The tool
 parses [Anapayas ISD/AS assignment website](https://docs.anapaya.net/en/latest/resources/isd-as-assignments/),
@@ -50,6 +50,11 @@ It reports the number of paths to each AS as well as the shortest path with late
 count and remote IP.
 
 It also provides a summary of its findings.
+
+## Traceroute All vs Ping All
+- TracerouteAll supports only fastest-path traceroute.
+- Ping-All also supports shortest paths and echo requests. Perhaps surprisingly, by default, 
+  PingAll will use a traceroute, not an echo. 
 
 # Ping Repeat
 

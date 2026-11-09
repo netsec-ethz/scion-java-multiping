@@ -1,0 +1,379 @@
+// Copyright 2024 ETH Zurich
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+package org.scion.multiping;
+
+import static org.scion.multiping.util.Util.*;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
+import org.scion.jpan.*;
+import org.scion.jpan.internal.Shim;
+import org.scion.jpan.internal.header.PathRawParser;
+import org.scion.multiping.util.*;
+
+/**
+ * This program takes a list of ISD/AS addresses and tries to measure latency to all of them. It
+ * will also attempt an ICMP ping for comparison.<br>
+ * The list is derived from <a
+ * href="https://docs.anapaya.net/en/latest/resources/isd-as-assignments/">here</a> and is locally
+ * stored in ISD-AS-Assignments.csv, see {@link ParseAssignments}.java.
+ *
+ * <p>There are several options for executing measurements (see "Policy"):<br>
+ * - SCMP traceroute vs SCMP echo<br>
+ * - Fastest vs shortest
+ *
+ * <p>Shortest: Report results on the path with the fewest hops. The number of hops can be evaluated
+ * locally, so this is very fast.
+ *
+ * <p>Fastest: Report the path with the lowest latency. This takes much longer because it will try
+ * all available paths before it can report on the best path.
+ */
+public class TracerouteAll {
+  // Traceroute interval milliseconds
+  private static final int TR_INTERVAL_MS = 5;
+  private static final boolean RUN_TIMEOUT_ANALYZER = false;
+  private static final int REPEAT = 3;
+  private static final boolean SHOW_ONLY_ICMP = false;
+  private static final Config config = new Config();
+
+  private static double maxPPS = 0;
+
+  static int localPort = 30041;
+  private static boolean startShim = false;
+
+  static {
+    config.tryICMP = false;
+    if (SHOW_ONLY_ICMP) {
+      DELAYED_PRINT = true;
+    }
+  }
+
+  private final Set<Long> listedAs = new HashSet<>();
+  private final Set<Long> seenAs = new HashSet<>();
+  private final ResultSummary summary = new ResultSummary();
+
+  private final ScionProvider service;
+  private final List<Path> timeouts = new ArrayList<>();
+  private static final boolean SHOW_PATH = false;
+
+  TracerouteAll(ScionProvider service) {
+    this.service = service;
+  }
+
+  public static void main(String[] argsArray) throws IOException {
+    PRINT = true;
+
+    // Initialize port from config, but CLI overrides config file.
+    localPort = config.getLocalPortOr30041();
+    parseArgs(argsArray);
+    // System.setProperty(Constants.PROPERTY_BOOTSTRAP_HOST, "31.130.239.184");
+    // System.setProperty(Constants.PROPERTY_BOOTSTRAP_PATH_SERVICE, "192.168.53.19:48080");
+    System.setProperty(Constants.PROPERTY_SHIM, Boolean.toString(startShim)); // disable SHIM
+
+    println("Settings:");
+    println("  ICMP=" + config.tryICMP);
+    println("  printOnlyICMP=" + SHOW_ONLY_ICMP);
+    println("  Local port=" + localPort);
+    println("  JPAN SHIM active=" + Shim.isInstalled());
+
+    long t1 = System.currentTimeMillis();
+    TracerouteAll tracerouteAll = new TracerouteAll(ScionProvider.defaultProvider(localPort));
+    tracerouteAll.run();
+    tracerouteAll.summary.prettyPrint(config);
+    long t2 = System.currentTimeMillis();
+    println("Max PPS:    " + maxPPS);
+    println("Total time: " + round((t2 - t1) / 1000.0, 2) + "s");
+
+    if (RUN_TIMEOUT_ANALYZER) {
+      println();
+      TimeoutAnalyzer.analyze(tracerouteAll.timeouts);
+    }
+  }
+
+  private static void parseArgs(String[] argsArray) {
+    List<String> args = new ArrayList<>(Arrays.asList(argsArray));
+    while (!args.isEmpty()) {
+      switch (args.get(0)) {
+        case "--help":
+          Main.printUsagePingAll();
+          System.exit(0);
+          break;
+        case "--shim":
+          startShim = true;
+          break;
+        case "--port":
+          if (args.size() < 2) {
+            Util.println("Error: --port requires a port number");
+            Main.printUsagePingAll();
+            System.exit(1);
+          }
+          try {
+            localPort = Integer.parseInt(args.get(1));
+          } catch (NumberFormatException e) {
+            Util.println("Error: Invalid port number: " + args.get(1));
+            Main.printUsagePingAll();
+            System.exit(1);
+          }
+          args.remove(1);
+          break;
+        default:
+          Util.println("Unknown option: " + args.get(0));
+          Main.printUsagePingAll();
+          System.exit(1);
+      }
+      args.remove(0);
+    }
+  }
+
+  ResultSummary run() throws IOException {
+    List<ParseAssignments.HostEntry> allASes = service.getIsdAsEntries();
+    // remove entry for local AS
+    List<Long> localASes = service.getLocalIsdAsList();
+    allASes =
+        allASes.stream()
+            .filter(e -> !localASes.contains(e.getIsdAs()))
+            .collect(Collectors.toList());
+    // Process all ASes
+    for (ParseAssignments.HostEntry e : allASes) {
+      print(ScionUtil.toStringIA(e.getIsdAs()) + "\t \"" + e.getName() + "\"\t  ");
+      //      if (e.getIsdAs() != ScionUtil.parseIA("64-559")) {
+      //        continue;
+      //      }
+      runAS(e);
+      listedAs.add(e.getIsdAs());
+    }
+
+    // Try to identify ASes that occur in any paths but that are not on the public list.
+    for (Long isdAs : seenAs) {
+      if (!listedAs.contains(isdAs)) {
+        summary.incSeenButNotListed();
+      }
+    }
+    return summary;
+  }
+
+  private void runAS(ParseAssignments.HostEntry remote) throws IOException {
+    summary.incIsdAsTried(remote.getIsdAs());
+    // Dummy address. The traceroute will contact the control service IP instead.
+    InetSocketAddress destinationAddress =
+        new InetSocketAddress(InetAddress.getByAddress(new byte[] {0, 0, 0, 0}), 30041);
+    int nPaths;
+    Scmp.TimedMessage[] msgs = new Scmp.TimedMessage[REPEAT];
+    Ref<Path> bestPath = Ref.empty();
+    try {
+      List<Path> paths = service.getPaths(remote.getIsdAs(), destinationAddress);
+      if (paths.isEmpty()) {
+        String src = ScionUtil.toStringIAs(service.getLocalIsdAsList());
+        String dst = ScionUtil.toStringIA(remote.getIsdAs());
+        if (SHOW_ONLY_ICMP) {
+          clearPrintQueue();
+        } else {
+          println("WARNING: No path found from [" + src + "] to " + dst);
+        }
+        summary.incAsNoPathFound(remote.getIsdAs());
+        summary.add(new Result(remote, Result.State.NO_PATH));
+        return;
+      }
+      nPaths = paths.size();
+      summary.checkTotalMax(remote.getIsdAs(), paths.size());
+      msgs[0] = findPaths(paths, bestPath, remote.getIsdAs());
+      // bestPath is null if all paths have timed out
+      if (msgs[0] != null && bestPath.get() != null && REPEAT > 1) {
+        try (ScionProvider.Sync sender = service.getSync()) {
+          for (int i = 1; i < msgs.length; i++) {
+            List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(bestPath.get());
+            msgs[i] = messages.get(messages.size() - 1);
+          }
+        }
+      }
+    } catch (ScionRuntimeException e) {
+      printlnERROR(e.getMessage());
+      summary.incAsError(remote.getIsdAs());
+      summary.add(new Result(remote, Result.State.ERROR));
+      return;
+    }
+    Scmp.TimedMessage bestMessage = null;
+    for (Scmp.TimedMessage m : msgs) {
+      if (bestMessage == null || m != null && m.getNanoSeconds() < bestMessage.getNanoSeconds()) {
+        bestMessage = m;
+      }
+    }
+    Result result = new Result(remote, bestMessage, bestPath.get(), nPaths);
+    summary.add(result);
+
+    if (msgs[0] == null) {
+      clearPrintQueue();
+      return;
+    }
+
+    // ICMP ping
+    StringBuilder icmpMs = new StringBuilder();
+    for (int i = 0; i < REPEAT; i++) {
+      String icmpMsStr = ICMP.pingICMP(msgs[0].getPath().getRemoteAddress(), config);
+      icmpMs.append(icmpMsStr).append(" ");
+      if (icmpMsStr.startsWith("TIMEOUT") || icmpMsStr.startsWith("N/A")) {
+        break;
+      }
+    }
+    result.setICMP(icmpMs.toString());
+
+    // output
+    int nHops = PathRawParser.create(msgs[0].getPath().getRawPath()).getHopCount();
+    String addr = msgs[0].getPath().getRemoteAddress().getHostAddress();
+    print(addr + "\t  nPaths=" + nPaths + "\t  nHops=" + nHops + "\t  time=");
+    for (Scmp.TimedMessage m : msgs) {
+      if (m == null) {
+        print("N/A ");
+        continue;
+      }
+      double millis = round(m.getNanoSeconds() / (double) 1_000_000, 2);
+      print(millis + "ms ");
+    }
+    String icmpStr = icmpMs.toString();
+    if (config.tryICMP) {
+      print("  ICMP= " + icmpStr);
+    }
+    if (SHOW_PATH) {
+      print("  " + ScionUtil.toStringPath(bestPath.get().getMetadata()));
+    }
+    if (SHOW_ONLY_ICMP && (icmpStr.startsWith("N/A") || icmpStr.startsWith("TIMEOUT"))) {
+      clearPrintQueue();
+    } else {
+      println();
+    }
+    if (msgs[0].isTimedOut()) {
+      summary.incAsTimeout(remote.getIsdAs());
+    } else {
+      summary.incAsSuccess(remote.getIsdAs());
+    }
+  }
+
+  private Scmp.TimedMessage findPaths(List<Path> paths, Ref<Path> bestOut, long isdAs) {
+    return findFastestTraceAsync(paths, bestOut, isdAs);
+  }
+
+  private Scmp.TracerouteMessage findFastestTraceAsync(
+      List<Path> paths, Ref<Path> refBest, long isdAs) {
+    PingResponseHandler handler = new PingResponseHandler(paths.size());
+
+    // Send all requests
+    try (ScionProvider.Async sender = service.getAsync(handler)) {
+      long t0 = System.nanoTime();
+      for (Path path : paths) {
+        summary.incPathTried();
+        Util.sleep(TR_INTERVAL_MS);
+        sender.sendTracerouteLast(path);
+      }
+      long t1 = System.nanoTime();
+      double t = Math.max(1, t1 - t0) / 1_000_000_000.; // Avoid div by 0
+      print(" [[t=" + t + " nP=" + paths.size() + "]] ");
+      maxPPS = Math.max(maxPPS, paths.size() / t);
+
+      // Wait for all messages to be received, BEFORE closing the "sender".
+      handler.await();
+    } catch (IOException e) {
+      printlnERROR(e.getMessage());
+      summary.incAsError(isdAs);
+      return null;
+    }
+
+    if (handler.hasErrors() && handler.messages.isEmpty()) {
+      summary.incAsError(isdAs);
+      return null;
+    }
+
+    Scmp.TracerouteMessage best = null;
+    for (Scmp.TimedMessage tm : handler.messages.values()) {
+      Scmp.TracerouteMessage msg = (Scmp.TracerouteMessage) tm;
+      summary.checkTotalMax(msg.getIsdAs(), msg);
+
+      if (msg.isTimedOut()) {
+        summary.incPathTimeout();
+        timeouts.add(msg.getPath());
+        if (best == null) {
+          best = msg;
+        }
+        continue;
+      }
+
+      seenAs.add(msg.getIsdAs());
+      summary.incPathSuccess();
+
+      if (best == null || msg.getNanoSeconds() < best.getNanoSeconds()) {
+        best = msg;
+        refBest.set(msg.getRequest().getPath());
+      }
+    }
+    return best;
+  }
+
+  private static class PingResponseHandler implements ScmpSenderAsync.ResponseHandler {
+    private final Map<Integer, Scmp.TimedMessage> messages = new ConcurrentHashMap<>();
+    private final CountDownLatch barrier;
+    private final AtomicInteger errors = new AtomicInteger();
+    private final int nPaths;
+
+    private PingResponseHandler(int nPaths) {
+      this.nPaths = nPaths;
+      barrier = new CountDownLatch(nPaths);
+    }
+
+    @Override
+    public void onResponse(Scmp.TimedMessage msg) {
+      barrier.countDown();
+      messages.put(msg.getSequenceNumber(), msg);
+    }
+
+    @Override
+    public void onTimeout(Scmp.TimedMessage msg) {
+      barrier.countDown();
+      messages.put(msg.getSequenceNumber(), msg);
+    }
+
+    @Override
+    public void onError(Scmp.ErrorMessage msg) {
+      errors.incrementAndGet();
+      barrier.countDown();
+    }
+
+    @Override
+    public void onException(Throwable t) {
+      errors.incrementAndGet();
+      barrier.countDown();
+    }
+
+    void await() {
+      try {
+        if (!barrier.await(1100, TimeUnit.MILLISECONDS)) {
+          throw new IllegalStateException("Missing messages: " + barrier.getCount() + "/" + nPaths);
+        }
+      } catch (InterruptedException e) {
+        Thread.currentThread().interrupt();
+        throw new IllegalStateException(e);
+      }
+    }
+
+    public boolean hasErrors() {
+      return errors.get() > 0;
+    }
+  }
+}
