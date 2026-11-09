@@ -37,8 +37,15 @@ public class Main {
           printHelp(args.length == 1 ? "" : args[1]);
           return;
         }
+      case "traceroute-all":
+        {
+          checkArgs(args, 0, 2);
+          TracerouteAll.main(newArgs);
+          return;
+        }
       case "ping-all":
         {
+          checkArgs(args, 1, 3);
           PingAll.main(newArgs);
           return;
         }
@@ -72,6 +79,9 @@ public class Main {
     switch (mode) {
       case "download-assignments":
         printUsageDownloadAssignments();
+        return;
+      case "traceroute-all":
+        printUsageTracerouteAll();
         return;
       case "ping-all":
         printUsagePingAll();
@@ -110,6 +120,18 @@ public class Main {
     Util.println("");
   }
 
+  static void printUsageTracerouteAll() {
+    Util.println(
+        "Usage: traceroute-all [--help] [--fastest|--shortest|--shortest_echo|--fastest_sync] [--port <port>] [--shim]");
+    Util.println("  --help              Show this help message.");
+    Util.println(
+        "  --port <port>       Use specified local port (default "
+            + TracerouteAll.localPort
+            + ").");
+    Util.println("  --shim              Start with SHIM enabled (default disabled).");
+    Util.println("");
+  }
+
   static void printUsagePingAll() {
     Util.println(
         "Usage: ping-all [--help] [--fastest|--shortest|--shortest_echo|--fastest_sync] [--port <port>] [--shim]");
@@ -121,7 +143,9 @@ public class Main {
     Util.println("  --shortest          Use shortest path (fewest hops) with SCMP traceroute.");
     // Util.println("  --shortest_echo     Use shortest path with SCMP echo");
     Util.println(
-        "  --port <port>       Use specified local port (default " + PingAll.localPort + ").");
+        "  --port <port>       Use specified local port (default "
+            + TracerouteAll.localPort
+            + ").");
     Util.println("  --shim              Start with SHIM enabled (default disabled).");
     Util.println("");
   }
