@@ -40,6 +40,7 @@ public class ResultSummary {
   private final Set<Long> uniqueTimeout = new HashSet<>();
   private final Set<Long> uniqueNoPath = new HashSet<>();
 
+  private int nUniquePathTried = 0;
   private int nPathTried = 0;
   private int nPathSuccess = 0;
   private int nPathTimeout = 0;
@@ -77,6 +78,10 @@ public class ResultSummary {
   public void incAsNoPathFound(long isdAs) {
     nAsNoPathFound++;
     uniqueNoPath.add(isdAs);
+  }
+
+  public void incUniquePathTried(int nPaths) {
+    nUniquePathTried += nPaths;
   }
 
   public void incPathTried() {
@@ -160,10 +165,10 @@ public class ResultSummary {
     println(" timeout     =\t " + uniqueTimeout.size() + " \t" + nAsTimeout);
     println(" error       =\t " + uniqueError.size() + " \t" + nAsError);
     println(" not listed  =\t " + nSeenButNotListed);
-    println("Path Stats:");
-    println(" all         =\t " + nPathTried);
-    println(" success     =\t " + nPathSuccess);
-    println(" timeout     =\t " + nPathTimeout);
+    println("Path Stats    \t Unique / \tprobes");
+    println(" all         =\t " + nUniquePathTried + " \t" + nPathTried);
+    println(" success     =\t " + nPathSuccess/3 + " \t" + nPathSuccess);
+    println(" timeout     =\t " + nPathTimeout/3 + " \t" + nPathTimeout);
     if (config.tryICMP) {
       println("ICMP Stats:");
       println(" all        =\t " + ICMP.nIcmpTried);

@@ -216,7 +216,7 @@ public class PingAll {
           println("WARNING: No path found from [" + src + "] to " + dst);
         }
         summary.incAsNoPathFound(remote.getIsdAs());
-        summary.add(new Result(remote, Result.State.NO_PATH));
+        summary.add(Result.createNoPath(remote));
         return;
       }
       nPaths = paths.size();
@@ -234,7 +234,7 @@ public class PingAll {
     } catch (ScionRuntimeException | IOException e) {
       printlnERROR(e.getMessage());
       summary.incAsError(remote.getIsdAs());
-      summary.add(new Result(remote, Result.State.ERROR));
+      summary.add(Result.createError(remote));
       return;
     }
     Scmp.TimedMessage bestMessage = null;
@@ -243,7 +243,7 @@ public class PingAll {
         bestMessage = m;
       }
     }
-    Result result = new Result(remote, bestMessage, bestPath.get(), nPaths);
+    Result result = new Result(remote, bestMessage, nPaths);
     summary.add(result);
 
     if (msgs[0] == null) {
