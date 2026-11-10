@@ -44,6 +44,7 @@ public class ResultSummary {
   private int nPathTried = 0;
   private int nPathSuccess = 0;
   private int nPathTimeout = 0;
+  private int nPathError = 0;
 
   private int nSeenButNotListed = 0;
   private final List<String> seenButNotListed = new ArrayList<>();
@@ -96,6 +97,10 @@ public class ResultSummary {
     nPathTimeout++;
   }
 
+  public void incPathError(int n) {
+    nPathError += n;
+  }
+
   public void incSeenButNotListed() {
     nSeenButNotListed++;
   }
@@ -118,6 +123,10 @@ public class ResultSummary {
 
   public int getPathTimeouts() {
     return nPathTimeout;
+  }
+
+  public int getPathErrors() {
+    return nPathError;
   }
 
   public void prettyPrint(Config config) {
@@ -166,9 +175,11 @@ public class ResultSummary {
     println(" error       =\t " + uniqueError.size() + " \t" + nAsError);
     println(" not listed  =\t " + nSeenButNotListed);
     println("Path Stats    \t Unique / \tprobes");
+    int repeats = config.attemptRepeatCnt;
     println(" all         =\t " + nUniquePathTried + " \t" + nPathTried);
-    println(" success     =\t " + nPathSuccess/3 + " \t" + nPathSuccess);
-    println(" timeout     =\t " + nPathTimeout/3 + " \t" + nPathTimeout);
+    println(" success     =\t " + nPathSuccess/repeats + " \t" + nPathSuccess);
+    println(" timeout     =\t " + nPathTimeout/repeats + " \t" + nPathTimeout);
+    println(" error       =\t " + nPathError/repeats + " \t" + nPathError);
     if (config.tryICMP) {
       println("ICMP Stats:");
       println(" all        =\t " + ICMP.nIcmpTried);
