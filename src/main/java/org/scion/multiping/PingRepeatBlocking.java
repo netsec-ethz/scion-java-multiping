@@ -147,7 +147,7 @@ public class PingRepeatBlocking {
         String dst = ScionUtil.toStringIA(remote.getIsdAs());
         println("WARNING: No path found from [" + src + "] to " + dst);
         nAsNoPathFound++;
-        results.add(new Result(remote, Result.State.NO_PATH));
+        results.add(Result.createNoPath(remote));
         return;
       }
       nPaths = paths.size();
@@ -155,10 +155,10 @@ public class PingRepeatBlocking {
     } catch (ScionRuntimeException e) {
       println("ERROR: " + e.getMessage());
       nAsError++;
-      results.add(new Result(remote, Result.State.ERROR));
+      results.add(Result.createError(remote));
       return;
     }
-    Result result = new Result(remote, msg, bestPath.get(), nPaths);
+    Result result = new Result(remote, msg, nPaths);
     results.add(result);
 
     if (msg == null) {

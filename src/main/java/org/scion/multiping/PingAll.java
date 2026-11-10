@@ -114,7 +114,8 @@ public class PingAll {
     long t1 = System.currentTimeMillis();
     PingAll pingAll = new PingAll(policy, ScionProvider.defaultProvider(localPort));
     pingAll.run();
-    pingAll.summary.prettyPrint(config);
+    // REPEAT = 1 because we don't count (unique) paths properly
+    pingAll.summary.prettyPrint(config, 1);
     long t2 = System.currentTimeMillis();
     println("Total time: " + round((t2 - t1) / 1000.0, 2) + "s");
 
@@ -216,7 +217,7 @@ public class PingAll {
           println("WARNING: No path found from [" + src + "] to " + dst);
         }
         summary.incAsNoPathFound(remote.getIsdAs());
-        summary.add(new Result(remote, Result.State.NO_PATH));
+        summary.add(Result.createNoPath(remote));
         return;
       }
       nPaths = paths.size();
@@ -234,7 +235,7 @@ public class PingAll {
     } catch (ScionRuntimeException | IOException e) {
       printlnERROR(e.getMessage());
       summary.incAsError(remote.getIsdAs());
-      summary.add(new Result(remote, Result.State.ERROR));
+      summary.add(Result.createError(remote));
       return;
     }
     Scmp.TimedMessage bestMessage = null;
@@ -243,7 +244,7 @@ public class PingAll {
         bestMessage = m;
       }
     }
-    Result result = new Result(remote, bestMessage, bestPath.get(), nPaths);
+    Result result = new Result(remote, bestMessage, nPaths);
     summary.add(result);
 
     if (msgs[0] == null) {

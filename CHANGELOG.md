@@ -12,6 +12,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 TODO
 - Why two arguments for bestMessage and bestPath for Result? The path should be in the message.
 - Create Result inside async traceroute, not outside.
+- Traceroute-all (& ping-all): if the first ping fails, there will be no 2nd or 3rd attempt.
+  Instead, we should do async calls for all REPEATS, potentially on all paths, to REALLY get the 
+  fastest path for each REPEAT.
 
 - Added probing interval and timeout analyzer. Upgraded to JPAN 0.8.0.
   [#36](https://github.com/netsec-ethz/scion-java-multiping/pull/36)
@@ -21,6 +24,8 @@ TODO
 ### Added
 - Separate traceroute-all command.
   [#39](https://github.com/netsec-ethz/scion-java-multiping/pull/39)
+- Improved traceroute-all command.
+  [#40](https://github.com/netsec-ethz/scion-java-multiping/pull/40)
 
 ## [0.7.0] - 2025-05-04
 

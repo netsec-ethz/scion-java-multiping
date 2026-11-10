@@ -34,6 +34,7 @@ public class Result {
   private int nHops;
   private int nPaths;
   private double pingMs;
+  private Scmp.TimedMessage[] bestMsgPerRound;
   private Path path;
   private String remoteIP;
   private String icmp;
@@ -43,23 +44,43 @@ public class Result {
     return new Result(new ParseAssignments.HostEntry(0, "dummy"), State.ERROR);
   }
 
+  public static Result createError(ParseAssignments.HostEntry e) {
+    return new Result(e, State.ERROR);
+  }
+
+  public static Result createNoPath(ParseAssignments.HostEntry e) {
+    return new Result(e, State.NO_PATH);
+  }
+
+  /**
+   * Create a Result that collects messages over several rounds via {@link #checkBestPath}. Call
+   * {@link #finish()} after the last round.
+   */
+  public static Result createUnfinished(ParseAssignments.HostEntry e, int nPaths, int nRounds) {
+    Result result = new Result(e, State.NOT_DONE);
+    result.nPaths = nPaths;
+    result.bestMsgPerRound = new Scmp.TimedMessage[nRounds];
+    return result;
+  }
+
   private Result(ParseAssignments.HostEntry e) {
     this.isdAs = e.getIsdAs();
     this.name = e.getName();
   }
 
-  public Result(ParseAssignments.HostEntry e, State state) {
+  private Result(ParseAssignments.HostEntry e, State state) {
     this(e);
     this.state = state;
   }
 
-  public Result(ParseAssignments.HostEntry e, Scmp.TimedMessage msg, Path request, int nPaths) {
+  public Result(ParseAssignments.HostEntry e, Scmp.TimedMessage msg, int nPaths) {
     this(e);
     if (msg == null) {
       state = State.LOCAL_AS;
       return;
     }
     this.nPaths = nPaths;
+    Path request = msg.getRequest() == null ? msg.getPath() : msg.getRequest().getPath();
     this.path = request;
     nHops = request != null ? PathRawParser.create(request.getRawPath()).getHopCount() : -1;
     remoteIP = msg.getPath().getRemoteAddress().getHostAddress();
@@ -69,6 +90,30 @@ public class Result {
       pingMs = msg.getNanoSeconds() / (double) 1_000_000;
       state = State.SUCCESS;
     }
+  }
+
+  public void finish() {
+    Scmp.TimedMessage bestMsg = null;
+    for (Scmp.TimedMessage msg : bestMsgPerRound) {
+      if (msg != null && (bestMsg == null || msg.getNanoSeconds() < bestMsg.getNanoSeconds())) {
+        bestMsg = msg;
+      }
+    }
+
+    if (bestMsg == null) {
+      state = State.ERROR;
+      return;
+    }
+    if (bestMsg.isTimedOut()) {
+      path = bestMsg.getPath();
+      state = State.TIMEOUT;
+    } else {
+      path = bestMsg.getRequest().getPath();
+      pingMs = bestMsg.getNanoSeconds() / (double) 1_000_000;
+      state = State.SUCCESS;
+    }
+    nHops = PathRawParser.create(path.getRawPath()).getHopCount();
+    remoteIP = bestMsg.getPath().getRemoteAddress().getHostAddress();
   }
 
   public long getIsdAs() {
@@ -95,14 +140,52 @@ public class Result {
     return pingMs;
   }
 
+  public String getRemoteIP() {
+    return remoteIP;
+  }
+
   public boolean isSuccess() {
     return state == State.SUCCESS;
+  }
+
+  public boolean isTimedOut() {
+    return state == State.TIMEOUT;
+  }
+
+  public boolean isError() {
+    return state == State.ERROR;
+  }
+
+  public void checkBestPath(Scmp.TimedMessage msg, int round) {
+    if (bestMsgPerRound[round] == null) {
+      bestMsgPerRound[round] = msg;
+    } else {
+      if (msg.getNanoSeconds() < bestMsgPerRound[round].getNanoSeconds()) {
+        bestMsgPerRound[round] = msg;
+      }
+    }
+  }
+
+  public Path getBestPath() {
+    return path;
+  }
+
+  public Scmp.TimedMessage[] getBestMessages() {
+    return bestMsgPerRound;
   }
 
   @Override
   public String toString() {
     String out = ScionUtil.toStringIA(isdAs) + " " + name;
-    out += "   " + (path != null ? ScionUtil.toStringPath(path.getMetadata()) : "N/A");
+    String p;
+    if (path == null) {
+      p = "N/A";
+    } else if (path.getMetadata() == null) {
+      p = ScionUtil.toStringPath(path.getRawPath());
+    } else {
+      p = ScionUtil.toStringPath(path.getMetadata());
+    }
+    out += "   " + p;
     out += "  " + remoteIP + "  nPaths=" + nPaths + "  nHops=" + nHops;
     return out + "  time=" + Util.round(pingMs, 2) + "ms" + "  ICMP=" + icmp;
   }

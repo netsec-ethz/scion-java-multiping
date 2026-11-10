@@ -133,7 +133,8 @@ class TracerouteAllTest {
     TracerouteAll ping = new TracerouteAll(p);
     ResultSummary summary = ping.run();
     assertEquals(3, summary.getAsTimeouts());
-    assertEquals(9, summary.getPathTimeouts());
+    // 3 ASes * 3 paths * 3 rounds
+    assertEquals(27, summary.getPathTimeouts());
   }
 
   @Test
@@ -162,8 +163,10 @@ class TracerouteAllTest {
             (ia, addr) -> PathHelper.createPaths(3));
     TracerouteAll ping = new TracerouteAll(p);
     ResultSummary summary = ping.run();
-    assertEquals(0, summary.getMaxPaths().getPathCount());
+    assertEquals(3, summary.getMaxPaths().getPathCount());
     assertEquals(3, summary.getAsErrors());
+    // 3 ASes * 3 paths * 3 rounds
+    assertEquals(27, summary.getPathErrors());
   }
 
   @Test
@@ -183,7 +186,9 @@ class TracerouteAllTest {
             (ia, addr) -> PathHelper.createPaths(3));
     TracerouteAll ping = new TracerouteAll(p);
     ResultSummary summary = ping.run();
-    assertEquals(0, summary.getMaxPaths().getPathCount());
+    assertEquals(3, summary.getMaxPaths().getPathCount());
     assertEquals(3, summary.getAsErrors());
+    // 3 ASes * 3 rounds, each round aborts after the first send
+    assertEquals(9, summary.getPathErrors());
   }
 }
