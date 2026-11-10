@@ -129,7 +129,7 @@ public class ResultSummary {
     return nPathError;
   }
 
-  public void prettyPrint(Config config) {
+  public void prettyPrint(Config config, int repeats) {
     // max:
     Result maxPing = max(Result::isSuccess, (o1, o2) -> (int) (o1.getPingMs() - o2.getPingMs()));
     Result maxHops = max(r -> r.getHopCount() > 0, Comparator.comparingInt(Result::getHopCount));
@@ -175,11 +175,10 @@ public class ResultSummary {
     println(" error       =\t " + uniqueError.size() + " \t" + nAsError);
     println(" not listed  =\t " + nSeenButNotListed);
     println("Path Stats    \t Unique / \tprobes");
-    int repeats = config.attemptRepeatCnt;
     println(" all         =\t " + nUniquePathTried + " \t" + nPathTried);
-    println(" success     =\t " + nPathSuccess/repeats + " \t" + nPathSuccess);
-    println(" timeout     =\t " + nPathTimeout/repeats + " \t" + nPathTimeout);
-    println(" error       =\t " + nPathError/repeats + " \t" + nPathError);
+    println(" success     =\t " + nPathSuccess / repeats + " \t" + nPathSuccess);
+    println(" timeout     =\t " + nPathTimeout / repeats + " \t" + nPathTimeout);
+    println(" error       =\t " + nPathError / repeats + " \t" + nPathError);
     if (config.tryICMP) {
       println("ICMP Stats:");
       println(" all        =\t " + ICMP.nIcmpTried);

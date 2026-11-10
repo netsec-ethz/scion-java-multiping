@@ -24,14 +24,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
-
 import org.scion.jpan.*;
 import org.scion.jpan.internal.Shim;
 import org.scion.multiping.util.*;
 
 /**
- * This program takes a list of ISD/AS addresses and tries to measure latency to all of them.
- * The list is derived from <a
+ * This program takes a list of ISD/AS addresses and tries to measure latency to all of them. The
+ * list is derived from <a
  * href="https://docs.anapaya.net/en/latest/resources/isd-as-assignments/">here</a> and is locally
  * stored in ISD-AS-Assignments.csv, see {@link ParseAssignments}.java.
  *
@@ -41,6 +40,7 @@ public class TracerouteAll {
   // Traceroute interval milliseconds
   private static final int TR_INTERVAL_MS = 5;
   private static final boolean RUN_TIMEOUT_ANALYZER = false;
+  private static final int REPEAT = 3;
   private static final Config config = new Config();
 
   private static double maxPPS = 0;
@@ -50,7 +50,6 @@ public class TracerouteAll {
 
   static {
     config.tryICMP = false;
-    config.attemptRepeatCnt = 3;
   }
 
   private final Set<Long> listedAs = new HashSet<>();
@@ -82,7 +81,7 @@ public class TracerouteAll {
     long t1 = System.currentTimeMillis();
     TracerouteAll tracerouteAll = new TracerouteAll(ScionProvider.defaultProvider(localPort));
     tracerouteAll.run();
-    tracerouteAll.summary.prettyPrint(config);
+    tracerouteAll.summary.prettyPrint(config, REPEAT);
     long t2 = System.currentTimeMillis();
     println("Max PPS:    " + maxPPS);
     println("Total time: " + round((t2 - t1) / 1000.0, 2) + "s");
@@ -133,15 +132,12 @@ public class TracerouteAll {
     // remove entry for local AS
     List<Long> localASes = service.getLocalIsdAsList();
     allASes =
-            allASes.stream()
-                    .filter(e -> !localASes.contains(e.getIsdAs()))
-                    .collect(Collectors.toList());
+        allASes.stream()
+            .filter(e -> !localASes.contains(e.getIsdAs()))
+            .collect(Collectors.toList());
     // Process all ASes
     for (ParseAssignments.HostEntry e : allASes) {
       print(ScionUtil.toStringIA(e.getIsdAs()) + "\t \"" + e.getName() + "\"\t  ");
-      //      if (e.getIsdAs() != ScionUtil.parseIA("64-559")) {
-      //        continue;
-      //      }
       runAS(e);
       listedAs.add(e.getIsdAs());
     }
@@ -158,9 +154,9 @@ public class TracerouteAll {
   private void runAS(ParseAssignments.HostEntry remote) throws IOException {
     summary.incIsdAsTried(remote.getIsdAs());
     // Dummy address. The traceroute will contact the control service IP instead.
-    InetAddress dummyIP = InetAddress.getByAddress(new byte[]{0, 0, 0, 0});
+    InetAddress dummyIP = InetAddress.getByAddress(new byte[] {0, 0, 0, 0});
     ScionSocketAddress destinationAddress =
-            ScionSocketAddress.from(remote.getIsdAs(), dummyIP, 30041);
+        ScionSocketAddress.from(remote.getIsdAs(), dummyIP, 30041);
     Result result;
     try {
       List<Path> paths = service.getPaths(remote.getIsdAs(), destinationAddress);
@@ -174,9 +170,9 @@ public class TracerouteAll {
       }
       summary.checkTotalMax(remote.getIsdAs(), paths.size());
       summary.incUniquePathTried(paths.size());
-      result = Result.createUnfinished(remote, paths.size(), config.attemptRepeatCnt);
-      for (int i = 0; i < config.attemptRepeatCnt; i++) {
-        findPaths(paths, result, summary, i);
+      result = Result.createUnfinished(remote, paths.size(), REPEAT);
+      for (int repeat = 0; repeat < REPEAT; repeat++) {
+        findPaths(paths, result, summary, repeat);
       }
       result.finish();
       summary.add(result);
@@ -215,47 +211,48 @@ public class TracerouteAll {
     }
   }
 
-  private void findPaths(List<Path> paths, Result result, ResultSummary summary, int round) {
+  private void findPaths(List<Path> paths, Result result, ResultSummary summary, int repetition) {
     PingResponseHandler handler = new PingResponseHandler(paths.size());
 
     // Send all requests
+    int nSent = 0;
     try (ScionProvider.Async sender = service.getAsync(handler)) {
       long t0 = System.nanoTime();
       for (Path path : paths) {
         summary.incPathTried();
+        nSent++;
         Util.sleep(TR_INTERVAL_MS);
         sender.sendTracerouteLast(path);
       }
       long t1 = System.nanoTime();
       double t = Math.max(1, t1 - t0) / 1_000_000_000.; // Avoid div by 0
-      // print(" [[t=" + t + " nP=" + paths.size() + "]] ");
       maxPPS = Math.max(maxPPS, paths.size() / t);
 
       // Wait for all messages to be received, BEFORE closing the "sender".
       handler.await();
     } catch (IOException e) {
       printlnERROR(e.getMessage());
+      summary.incPathError(nSent);
       return;
     }
 
+    summary.incPathError(handler.errors.get());
     if (handler.hasErrors() && handler.messages.isEmpty()) {
-      summary.incPathError(handler.errors.get());
       return;
     }
 
     for (Scmp.TimedMessage tm : handler.messages.values()) {
       Scmp.TracerouteMessage msg = (Scmp.TracerouteMessage) tm;
       summary.checkTotalMax(msg.getIsdAs(), msg);
+      result.checkBestPath(msg, repetition);
 
-      result.checkBestPath(msg, round);
       if (msg.isTimedOut()) {
         summary.incPathTimeout();
         timeouts.add(msg.getPath());
-        continue;
+      } else {
+        seenAs.add(msg.getIsdAs());
+        summary.incPathSuccess();
       }
-
-      seenAs.add(msg.getIsdAs());
-      summary.incPathSuccess();
     }
   }
 

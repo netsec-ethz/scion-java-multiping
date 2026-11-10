@@ -21,7 +21,12 @@ import org.scion.jpan.internal.header.PathRawParser;
 
 public class Result {
   public enum State {
-    NOT_DONE, SUCCESS, ERROR, NO_PATH, TIMEOUT, LOCAL_AS
+    NOT_DONE,
+    SUCCESS,
+    ERROR,
+    NO_PATH,
+    TIMEOUT,
+    LOCAL_AS
   }
 
   private final long isdAs;
@@ -29,7 +34,6 @@ public class Result {
   private int nHops;
   private int nPaths;
   private double pingMs;
-  private Scmp.TimedMessage bestMsg;
   private Scmp.TimedMessage[] bestMsgPerRound;
   private Path path;
   private String remoteIP;
@@ -48,6 +52,10 @@ public class Result {
     return new Result(e, State.NO_PATH);
   }
 
+  /**
+   * Create a Result that collects messages over several rounds via {@link #checkBestPath}. Call
+   * {@link #finish()} after the last round.
+   */
   public static Result createUnfinished(ParseAssignments.HostEntry e, int nPaths, int nRounds) {
     Result result = new Result(e, State.NOT_DONE);
     result.nPaths = nPaths;
@@ -85,8 +93,8 @@ public class Result {
   }
 
   public void finish() {
-    for (int i = 0; i < bestMsgPerRound.length; i++) {
-      Scmp.TimedMessage msg = bestMsgPerRound[i];
+    Scmp.TimedMessage bestMsg = null;
+    for (Scmp.TimedMessage msg : bestMsgPerRound) {
       if (msg != null && (bestMsg == null || msg.getNanoSeconds() < bestMsg.getNanoSeconds())) {
         bestMsg = msg;
       }

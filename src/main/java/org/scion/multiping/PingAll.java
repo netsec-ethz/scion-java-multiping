@@ -114,7 +114,8 @@ public class PingAll {
     long t1 = System.currentTimeMillis();
     PingAll pingAll = new PingAll(policy, ScionProvider.defaultProvider(localPort));
     pingAll.run();
-    pingAll.summary.prettyPrint(config);
+    // REPEAT = 1 because we don't count (unique) paths properly
+    pingAll.summary.prettyPrint(config, 1);
     long t2 = System.currentTimeMillis();
     println("Total time: " + round((t2 - t1) / 1000.0, 2) + "s");
 
