@@ -26,6 +26,8 @@ TODO
   [#39](https://github.com/netsec-ethz/scion-java-multiping/pull/39)
 - Improved traceroute-all command.
   [#40](https://github.com/netsec-ethz/scion-java-multiping/pull/40)
+- Detection of public/private ISD from available TRCs.
+  [#41](https://github.com/netsec-ethz/scion-java-multiping/pull/41)
 
 ## [0.7.0] - 2025-05-04
 

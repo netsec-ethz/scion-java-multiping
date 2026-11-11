@@ -30,6 +30,7 @@ public class ResultSummary {
 
   private final List<Result> results = new ArrayList<>();
   private int nIsdAsTried = 0;
+  private int nAsPrivateISD = 0;
   private int nAsSuccess = 0;
   private int nAsError = 0;
   private int nAsTimeout = 0;
@@ -47,7 +48,6 @@ public class ResultSummary {
   private int nPathError = 0;
 
   private int nSeenButNotListed = 0;
-  private final List<String> seenButNotListed = new ArrayList<>();
 
   private long totalMaxHopsIsdAs;
   private int totalMaxHopsN;
@@ -59,6 +59,10 @@ public class ResultSummary {
   public void incIsdAsTried(long isdAs) {
     nIsdAsTried++;
     uniqueASes.add(ScionUtil.extractAs(isdAs));
+  }
+
+  public void incAsPrivate() {
+    nAsPrivateISD++;
   }
 
   public void incAsSuccess(long isdAs) {
@@ -169,6 +173,7 @@ public class ResultSummary {
     println("AS Stats      \t Unique / \tISD-ASes");
     // +1 for local AS
     println(" ISD-ASes    =\t " + (uniqueASes.size() + 1) + " \t" + (nIsdAsTried + 1));
+    println(" private AS  =\t -" + " \t" + nAsPrivateISD);
     println(" success     =\t " + uniqueSuccess.size() + " \t" + nAsSuccess);
     println(" no path     =\t " + uniqueNoPath.size() + " \t" + nAsNoPathFound);
     println(" timeout     =\t " + uniqueTimeout.size() + " \t" + nAsTimeout);

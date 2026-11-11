@@ -128,6 +128,7 @@ public class TracerouteAll {
   }
 
   ResultSummary run() throws IOException {
+    Set<Integer> publicTrcs = DownloadTrcs.getTrcs().stream().map(DownloadTrcs.Trc::getIsd).collect(Collectors.toSet());
     List<ParseAssignments.HostEntry> allASes = service.getIsdAsEntries();
     // remove entry for local AS
     List<Long> localASes = service.getLocalIsdAsList();
@@ -138,7 +139,12 @@ public class TracerouteAll {
     // Process all ASes
     for (ParseAssignments.HostEntry e : allASes) {
       print(ScionUtil.toStringIA(e.getIsdAs()) + "\t \"" + e.getName() + "\"\t  ");
-      runAS(e);
+      if (publicTrcs.contains(ScionUtil.extractIsd(e.getIsdAs()))) {
+        runAS(e);
+      } else {
+        summary.incAsPrivate();
+        println("private ISD");
+      }
       listedAs.add(e.getIsdAs());
     }
 
@@ -172,7 +178,7 @@ public class TracerouteAll {
       summary.incUniquePathTried(paths.size());
       result = Result.createUnfinished(remote, paths.size(), REPEAT);
       for (int repeat = 0; repeat < REPEAT; repeat++) {
-        findPaths(paths, result, summary, repeat);
+        findPaths(paths, result, repeat);
       }
       result.finish();
       summary.add(result);
@@ -211,7 +217,7 @@ public class TracerouteAll {
     }
   }
 
-  private void findPaths(List<Path> paths, Result result, ResultSummary summary, int repetition) {
+  private void findPaths(List<Path> paths, Result result, int repetition) {
     PingResponseHandler handler = new PingResponseHandler(paths.size());
 
     // Send all requests
