@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.scion.jpan.*;
 import org.scion.multiping.util.Helper;
@@ -29,6 +31,16 @@ import org.scion.multiping.util.ResultSummary;
 import org.scion.multiping.util.ScionProvider;
 
 class TracerouteAllTest {
+
+  @BeforeAll
+  static void beforeAll() {
+    TracerouteAll.FETCH_PUBLIC_ISDS = false;
+  }
+
+  @AfterAll
+  static void afterAll() {
+    TracerouteAll.FETCH_PUBLIC_ISDS = true;
+  }
 
   @FunctionalInterface
   interface AsyncNoClose extends ScionProvider.Async {

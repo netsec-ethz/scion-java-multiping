@@ -22,6 +22,8 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.scion.jpan.Path;
 import org.scion.jpan.PathHelper;
@@ -32,6 +34,16 @@ import org.scion.multiping.util.ResultSummary;
 import org.scion.multiping.util.ScionProvider;
 
 class PingAllTest {
+
+  @BeforeAll
+  static void beforeAll() {
+    PingAll.FETCH_PUBLIC_ISDS = false;
+  }
+
+  @AfterAll
+  static void afterAll() {
+    PingAll.FETCH_PUBLIC_ISDS = true;
+  }
 
   @FunctionalInterface
   interface AsyncNoClose extends ScionProvider.Async {
