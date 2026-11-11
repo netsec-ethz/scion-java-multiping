@@ -29,6 +29,12 @@ TODO
 
 ## [0.7.0] - 2025-05-04
 
+### Changed
+
+- Bump jnb-ping to 3.0.0 and JPAN to 0.6.2-SNAPSHOT
+  [#20](https://github.com/netsec-ethz/scion-java-multiping/pull/20)
+
+
 ### Fixed
 
 - Fixed mangled output with mode SHOW_SCMP_ONLY
