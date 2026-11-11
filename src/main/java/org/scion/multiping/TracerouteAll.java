@@ -40,6 +40,7 @@ public class TracerouteAll {
   // Traceroute interval milliseconds
   private static final int TR_INTERVAL_MS = 5;
   private static final boolean RUN_TIMEOUT_ANALYZER = false;
+  public static boolean FETCH_PUBLIC_ISDS = true;
   private static final int REPEAT = 3;
   private static final Config config = new Config();
 
@@ -59,6 +60,7 @@ public class TracerouteAll {
   private final ScionProvider service;
   private final List<Path> timeouts = new ArrayList<>();
   private static final boolean SHOW_PATH = false;
+  private final AtomicInteger nLocal = new AtomicInteger();
 
   TracerouteAll(ScionProvider service) {
     this.service = service;
@@ -81,7 +83,7 @@ public class TracerouteAll {
     long t1 = System.currentTimeMillis();
     TracerouteAll tracerouteAll = new TracerouteAll(ScionProvider.defaultProvider(localPort));
     tracerouteAll.run();
-    tracerouteAll.summary.prettyPrint(config, REPEAT);
+    tracerouteAll.summary.prettyPrint(config, REPEAT, tracerouteAll.nLocal.get());
     long t2 = System.currentTimeMillis();
     println("Max PPS:    " + maxPPS);
     println("Total time: " + round((t2 - t1) / 1000.0, 2) + "s");
@@ -128,18 +130,32 @@ public class TracerouteAll {
   }
 
   ResultSummary run() throws IOException {
-    Set<Integer> publicTrcs = DownloadTrcs.getTrcs().stream().map(DownloadTrcs.Trc::getIsd).collect(Collectors.toSet());
+    Set<Integer> publicTrcs;
+    if (FETCH_PUBLIC_ISDS) {
+      publicTrcs =
+          DownloadTrcs.getTrcs().stream().map(DownloadTrcs.Trc::getIsd).collect(Collectors.toSet());
+    } else {
+      publicTrcs = Collections.emptySet();
+    }
     List<ParseAssignments.HostEntry> allASes = service.getIsdAsEntries();
     // remove entry for local AS
     List<Long> localASes = service.getLocalIsdAsList();
     allASes =
         allASes.stream()
-            .filter(e -> !localASes.contains(e.getIsdAs()))
+            .filter(
+                e -> {
+                  if (localASes.contains(e.getIsdAs())) {
+                    nLocal.getAndIncrement();
+                    return false;
+                  }
+                  return true;
+                })
             .collect(Collectors.toList());
     // Process all ASes
     for (ParseAssignments.HostEntry e : allASes) {
       print(ScionUtil.toStringIA(e.getIsdAs()) + "\t \"" + e.getName() + "\"\t  ");
-      if (publicTrcs.contains(ScionUtil.extractIsd(e.getIsdAs()))) {
+      summary.incIsdAsTried(e.getIsdAs());
+      if (!FETCH_PUBLIC_ISDS || publicTrcs.contains(ScionUtil.extractIsd(e.getIsdAs()))) {
         runAS(e);
       } else {
         summary.incAsPrivate();
@@ -158,7 +174,6 @@ public class TracerouteAll {
   }
 
   private void runAS(ParseAssignments.HostEntry remote) throws IOException {
-    summary.incIsdAsTried(remote.getIsdAs());
     // Dummy address. The traceroute will contact the control service IP instead.
     InetAddress dummyIP = InetAddress.getByAddress(new byte[] {0, 0, 0, 0});
     ScionSocketAddress destinationAddress =

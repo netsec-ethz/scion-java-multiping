@@ -14,6 +14,8 @@
 
 package org.scion.multiping.util;
 
+import static org.scion.multiping.util.Util.*;
+
 import com.google.gson.Gson;
 import com.google.gson.annotations.SerializedName;
 import java.io.IOException;
@@ -22,8 +24,6 @@ import org.jsoup.Jsoup;
 import org.scion.jpan.Constants;
 import org.scion.jpan.ScionUtil;
 import org.scion.jpan.internal.bootstrap.DNSHelper;
-
-import static org.scion.multiping.util.Util.*;
 
 /**
  * Downloads all TRCs known to a control service and extracts the ISD numbers and the core and
@@ -95,8 +95,7 @@ public class DownloadTrcs {
 
   private static String findServer() {
     String server =
-        ScionUtil.getPropertyOrEnv(
-            Constants.PROPERTY_BOOTSTRAP_HOST, Constants.ENV_BOOTSTRAP_HOST);
+        ScionUtil.getPropertyOrEnv(Constants.PROPERTY_BOOTSTRAP_HOST, Constants.ENV_BOOTSTRAP_HOST);
     if (server == null) {
       server = DNSHelper.searchForDiscoveryService();
     }

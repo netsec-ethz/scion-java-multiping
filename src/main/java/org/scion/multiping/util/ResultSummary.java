@@ -133,7 +133,14 @@ public class ResultSummary {
     return nPathError;
   }
 
-  public void prettyPrint(Config config, int repeats) {
+  /**
+   * Pretty print the summary.
+   *
+   * @param config config
+   * @param repeats Probing repeats per AS
+   * @param nLocal Number of local ASes
+   */
+  public void prettyPrint(Config config, int repeats, int nLocal) {
     // max:
     Result maxPing = max(Result::isSuccess, (o1, o2) -> (int) (o1.getPingMs() - o2.getPingMs()));
     Result maxHops = max(r -> r.getHopCount() > 0, Comparator.comparingInt(Result::getHopCount));
@@ -172,8 +179,8 @@ public class ResultSummary {
     println("");
     println("AS Stats      \t Unique / \tISD-ASes");
     // +1 for local AS
-    println(" ISD-ASes    =\t " + (uniqueASes.size() + 1) + " \t" + (nIsdAsTried + 1));
-    println(" private AS  =\t -" + " \t" + nAsPrivateISD);
+    println(" ISD-ASes    =\t " + (uniqueASes.size() + nLocal) + " \t" + (nIsdAsTried + nLocal));
+    println(" private ISD =\t -" + " \t" + nAsPrivateISD);
     println(" success     =\t " + uniqueSuccess.size() + " \t" + nAsSuccess);
     println(" no path     =\t " + uniqueNoPath.size() + " \t" + nAsNoPathFound);
     println(" timeout     =\t " + uniqueTimeout.size() + " \t" + nAsTimeout);
