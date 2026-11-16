@@ -174,3 +174,14 @@ the example works only for `ethz.ch`):
 ```
 java -Dorg.scion.dnsSearchDomains=ethz.ch. -jar scion-multiping-0.7.0-executable.jar
 ```
+
+## ICMP requires port access
+
+```
+# show group names
+$ id -nG
+# get a group id
+$ getent group <some-group-name>
+# enable port
+$ sudo sysctl net.ipv4.ping_group_range='<id> <id>'
+```

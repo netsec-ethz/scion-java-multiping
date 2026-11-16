@@ -89,7 +89,7 @@
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>jnb-ping</artifactId>
-            <version>1.3.2</version>
+            <version>3.0.0</version>
         </dependency>
 
         <dependency>
