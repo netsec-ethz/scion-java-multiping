@@ -71,7 +71,7 @@ public class PingAll {
   private final Set<Long> seenAs = new HashSet<>();
   private final ResultSummary summary = new ResultSummary();
 
-  private final ScionProvider service;
+  private final MPScionService service;
   private final Policy policy;
 
   private final List<Path> timeouts = new ArrayList<>();
@@ -91,7 +91,7 @@ public class PingAll {
   private static final boolean SHOW_PATH = false;
   private final AtomicInteger nLocal = new AtomicInteger();
 
-  PingAll(Policy policy, ScionProvider service) {
+  PingAll(Policy policy, MPScionService service) {
     this.policy = policy;
     this.service = service;
   }
@@ -114,7 +114,7 @@ public class PingAll {
     println("  JPAN SHIM active=" + Shim.isInstalled());
 
     long t1 = System.currentTimeMillis();
-    PingAll pingAll = new PingAll(policy, ScionProvider.defaultProvider(localPort));
+    PingAll pingAll = new PingAll(policy, MPScionService.defaultService());
     pingAll.run();
     // REPEAT = 1 because we don't count (unique) paths properly
     pingAll.summary.prettyPrint(config, 1, pingAll.nLocal.get());
@@ -246,7 +246,7 @@ public class PingAll {
       msgs[0] = findPaths(paths, bestPath, remote.getIsdAs());
       // bestPath is null if all paths have timed out
       if (msgs[0] != null && bestPath.get() != null && REPEAT > 1) {
-        try (ScionProvider.Sync sender = service.getSync()) {
+        try (ScmpSender sender = Scmp.newSenderBuilder().setLocalPort(localPort).build()) {
           for (int i = 1; i < msgs.length; i++) {
             List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(bestPath.get());
             msgs[i] = messages.get(messages.size() - 1);
@@ -334,7 +334,7 @@ public class PingAll {
     Path path = PathPolicy.MIN_HOPS.filter(paths).get(0);
     refBest.set(path);
     ByteBuffer bb = ByteBuffer.allocate(0);
-    try (ScionProvider.Sync sender = service.getSync()) {
+    try (MPScionService.Sync sender = service.newScmpSender(localPort)) {
       summary.incPathTried();
       Scmp.EchoMessage msg = sender.sendEchoRequest(path, bb);
 
@@ -355,7 +355,7 @@ public class PingAll {
   private Scmp.TracerouteMessage findShortestTR(List<Path> paths, Ref<Path> refBest, long isdAs) {
     Path path = PathPolicy.MIN_HOPS.filter(paths).get(0);
     refBest.set(path);
-    try (ScionProvider.Sync sender = service.getSync()) {
+    try (MPScionService.Sync sender = service.newScmpSender(localPort)) {
       summary.incPathTried();
       List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(path);
 
@@ -380,7 +380,7 @@ public class PingAll {
 
   private Scmp.TracerouteMessage findFastestTR(List<Path> paths, Ref<Path> refBest, long isdAs) {
     Scmp.TracerouteMessage best = null;
-    try (ScionProvider.Sync sender = service.getSync()) {
+    try (MPScionService.Sync sender = service.newScmpSender(localPort)) {
       for (Path path : paths) {
         summary.incPathTried();
         List<Scmp.TracerouteMessage> messages = sender.sendTracerouteRequest(path);
@@ -415,7 +415,7 @@ public class PingAll {
     PingResponseHandler handler = new PingResponseHandler(paths.size());
 
     // Send all requests
-    try (ScionProvider.Async sender = service.getAsync(handler)) {
+    try (MPScionService.Async sender = service.newScmpSenderAsync(localPort, handler)) {
       for (Path path : paths) {
         summary.incPathTried();
         Util.sleep(TR_INTERVAL_MS);

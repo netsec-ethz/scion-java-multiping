@@ -20,6 +20,8 @@ TODO
   [#36](https://github.com/netsec-ethz/scion-java-multiping/pull/36)
 - Upgraded to JPAN 0.8.1, moved to new JPAN API.
   [#38](https://github.com/netsec-ethz/scion-java-multiping/pull/38)
+- Migrated testing to new MockService. Removed ScionProvider.
+  [#42](https://github.com/netsec-ethz/scion-java-multiping/pull/42)
 
 ### Added
 - Separate traceroute-all command.

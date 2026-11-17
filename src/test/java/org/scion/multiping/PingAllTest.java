@@ -25,13 +25,8 @@ import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.scion.jpan.Path;
-import org.scion.jpan.PathHelper;
-import org.scion.jpan.Scmp;
-import org.scion.jpan.ScmpSenderAsync;
-import org.scion.multiping.util.Helper;
-import org.scion.multiping.util.ResultSummary;
-import org.scion.multiping.util.ScionProvider;
+import org.scion.jpan.*;
+import org.scion.multiping.util.*;
 
 class PingAllTest {
 
@@ -46,7 +41,7 @@ class PingAllTest {
   }
 
   @FunctionalInterface
-  interface AsyncNoClose extends ScionProvider.Async {
+  interface AsyncNoClose extends MPScionService.Async {
     @Override
     default void close() {}
   }
@@ -84,7 +79,7 @@ class PingAllTest {
     }
   }
 
-  static class MySync implements ScionProvider.Sync {
+  static class MySync implements MPScionService.Sync {
     private final int sent;
     private int seqId = 0;
 
@@ -138,14 +133,15 @@ class PingAllTest {
       }
     }
 
-    ScionProvider p =
-        ScionProvider.createSync(
-            () -> new MySync(3),
-            h -> new MyWithHandler(h),
-            Helper::isdAsList,
-            () -> Collections.singletonList(0L),
-            (ia, addr) -> PathHelper.createPaths(3));
-    PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, p);
+    MockService ms =
+        new MockService.Builder()
+            .syncSupplier(() -> new MySync(3))
+            .asyncSupplier(h -> new MyWithHandler(h))
+            .assignments(Helper.isdAsList())
+            .localIsdAses(Collections.singletonList(0L))
+            .localPaths(PathHelper.createPaths(3))
+            .build();
+    PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, ms);
     ResultSummary summary = ping.run();
     assertEquals(3, summary.getAsTimeouts());
     assertEquals(9, summary.getPathTimeouts());
@@ -168,14 +164,15 @@ class PingAllTest {
       }
     }
 
-    ScionProvider p =
-        ScionProvider.createSync(
-            () -> new MySync(3),
-            h -> new MyWithHandler(h),
-            Helper::isdAsList,
-            () -> Collections.singletonList(0L),
-            (ia, addr) -> PathHelper.createPaths(3));
-    PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, p);
+    MockService ms =
+        new MockService.Builder()
+            .syncSupplier(() -> new MySync(3))
+            .asyncSupplier(h -> new MyWithHandler(h))
+            .assignments(Helper.isdAsList())
+            .localIsdAses(Collections.singletonList(0L))
+            .localPaths(PathHelper.createPaths(3))
+            .build();
+    PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, ms);
     ResultSummary summary = ping.run();
     assertEquals(0, summary.getMaxPaths().getPathCount());
     assertEquals(3, summary.getAsErrors());
@@ -189,14 +186,15 @@ class PingAllTest {
       }
     }
 
-    ScionProvider p =
-        ScionProvider.createSync(
-            () -> new MySync(3),
-            h -> new MyWithHandler(h),
-            Helper::isdAsList,
-            () -> Collections.singletonList(0L),
-            (ia, addr) -> PathHelper.createPaths(3));
-    PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, p);
+    MockService ms =
+        new MockService.Builder()
+            .syncSupplier(() -> new MySync(3))
+            .asyncSupplier(h -> new MyWithHandler(h))
+            .assignments(Helper.isdAsList())
+            .localIsdAses(Collections.singletonList(0L))
+            .localPaths(PathHelper.createPaths(3))
+            .build();
+    PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, ms);
     ResultSummary summary = ping.run();
     assertEquals(0, summary.getMaxPaths().getPathCount());
     assertEquals(3, summary.getAsErrors());
