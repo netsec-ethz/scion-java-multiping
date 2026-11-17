@@ -57,12 +57,12 @@ public class TracerouteAll {
   private final Set<Long> seenAs = new HashSet<>();
   private final ResultSummary summary = new ResultSummary();
 
-  private final ScionProvider service;
+  private final MPScionService service;
   private final List<Path> timeouts = new ArrayList<>();
   private static final boolean SHOW_PATH = false;
   private final AtomicInteger nLocal = new AtomicInteger();
 
-  TracerouteAll(ScionProvider service) {
+  TracerouteAll(MPScionService service) {
     this.service = service;
   }
 
@@ -81,7 +81,7 @@ public class TracerouteAll {
     println("  JPAN SHIM active=" + Shim.isInstalled());
 
     long t1 = System.currentTimeMillis();
-    TracerouteAll tracerouteAll = new TracerouteAll(ScionProvider.defaultProvider(localPort));
+    TracerouteAll tracerouteAll = new TracerouteAll(MPScionService.defaultService());
     tracerouteAll.run();
     tracerouteAll.summary.prettyPrint(config, REPEAT, tracerouteAll.nLocal.get());
     long t2 = System.currentTimeMillis();
@@ -237,7 +237,7 @@ public class TracerouteAll {
 
     // Send all requests
     int nSent = 0;
-    try (ScionProvider.Async sender = service.getAsync(handler)) {
+    try (MPScionService.Async sender = service.newScmpSenderAsync(localPort, handler)) {
       long t0 = System.nanoTime();
       for (Path path : paths) {
         summary.incPathTried();

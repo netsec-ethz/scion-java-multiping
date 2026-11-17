@@ -17,21 +17,13 @@ package org.scion.multiping;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Consumer;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
-import org.scion.jpan.Path;
-import org.scion.jpan.PathHelper;
-import org.scion.jpan.Scmp;
-import org.scion.jpan.ScmpSenderAsync;
-import org.scion.multiping.util.Helper;
-import org.scion.multiping.util.ResultSummary;
-import org.scion.multiping.util.ScionProvider;
+import org.scion.jpan.*;
+import org.scion.multiping.util.*;
 
 class PingAllTest {
 
@@ -45,83 +37,10 @@ class PingAllTest {
     PingAll.FETCH_PUBLIC_ISDS = true;
   }
 
-  @FunctionalInterface
-  interface AsyncNoClose extends ScionProvider.Async {
-    @Override
-    default void close() {}
-  }
-
-  static class WithHandler implements AsyncNoClose {
-    private int sequenceId = 0;
-    ScmpSenderAsync.ResponseHandler handler;
-    Consumer<ScmpSenderAsync.ResponseHandler> handlerConsumer;
-
-    WithHandler(
-        ScmpSenderAsync.ResponseHandler handler,
-        Consumer<ScmpSenderAsync.ResponseHandler> handlerConsumer) {
-      this.handler = handler;
-      this.handlerConsumer = handlerConsumer;
-      // trigger handler
-      handlerConsumer.accept(handler);
-    }
-
-    @Override
-    public int sendTracerouteLast(Path path) throws IOException {
-      return sequenceId++;
-    }
-  }
-
-  static class WithIOError extends WithHandler {
-    WithIOError(
-        ScmpSenderAsync.ResponseHandler handler,
-        Consumer<ScmpSenderAsync.ResponseHandler> handlerConsumer) {
-      super(handler, handlerConsumer);
-    }
-
-    @Override
-    public int sendTracerouteLast(Path path) throws IOException {
-      throw new IOException("SCMP error");
-    }
-  }
-
-  static class MySync implements ScionProvider.Sync {
-    private final int sent;
-    private int seqId = 0;
-
-    MySync(int sent) {
-      this.sent = sent;
-    }
-
-    @Override
-    public Scmp.EchoMessage sendEchoRequest(Path path, ByteBuffer bb) throws IOException {
-      Scmp.EchoMessage msg = Scmp.EchoMessage.create(Scmp.TypeCode.TYPE_129, seqId++, seqId, path);
-      msg.assignRequest(msg, 1_000_000); // Hack: assign to itself
-      return msg;
-    }
-
-    @Override
-    public List<Scmp.TracerouteMessage> sendTracerouteRequest(Path path) throws IOException {
-      List<Scmp.TracerouteMessage> msgs = new ArrayList<>();
-      int sID = seqId++;
-      for (int i = 0; i < sent; i++) {
-        Scmp.TracerouteMessage msg =
-            new Scmp.TracerouteMessage(Scmp.TypeCode.TYPE_131, sID, sID, 1, 1, path);
-        msg.assignRequest(msg, 1_000_000); // Hack: assign to itself
-        msgs.add(msg);
-      }
-      return msgs;
-    }
-
-    @Override
-    public void close() {
-      /* Nothing to do */
-    }
-  }
-
   @Test
   void testPingTimeout() throws IOException {
     List<Path> paths = PathHelper.createPaths(3);
-    class MyWithHandler extends WithHandler {
+    class MyWithHandler extends MockHandler.WithHandler {
       MyWithHandler(ScmpSenderAsync.ResponseHandler handler) {
         super(
             handler,
@@ -138,14 +57,15 @@ class PingAllTest {
       }
     }
 
-    ScionProvider p =
-        ScionProvider.createSync(
-            () -> new MySync(3),
-            h -> new MyWithHandler(h),
-            Helper::isdAsList,
-            () -> Collections.singletonList(0L),
-            (ia, addr) -> PathHelper.createPaths(3));
-    PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, p);
+    MockService ms =
+        new MockService.Builder()
+            .syncSupplier(() -> new MySync(3))
+            .asyncSupplier(h -> new MyWithHandler(h))
+            .assignments(Helper.isdAsList())
+            .localIsdAses(Collections.singletonList(0L))
+            .localPaths(PathHelper.createPaths(3))
+            .build();
+    PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, ms);
     ResultSummary summary = ping.run();
     assertEquals(3, summary.getAsTimeouts());
     assertEquals(9, summary.getPathTimeouts());
@@ -154,7 +74,7 @@ class PingAllTest {
   @Test
   void testPingErrorCode() throws IOException {
     List<Path> paths = PathHelper.createPaths(3);
-    class MyWithHandler extends WithHandler {
+    class MyWithHandler extends MockHandler.WithHandler {
       MyWithHandler(ScmpSenderAsync.ResponseHandler handler) {
         super(
             handler,
@@ -168,14 +88,15 @@ class PingAllTest {
       }
     }
 
-    ScionProvider p =
-        ScionProvider.createSync(
-            () -> new MySync(3),
-            h -> new MyWithHandler(h),
-            Helper::isdAsList,
-            () -> Collections.singletonList(0L),
-            (ia, addr) -> PathHelper.createPaths(3));
-    PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, p);
+    MockService ms =
+        new MockService.Builder()
+            .syncSupplier(() -> new MySync(3))
+            .asyncSupplier(h -> new MyWithHandler(h))
+            .assignments(Helper.isdAsList())
+            .localIsdAses(Collections.singletonList(0L))
+            .localPaths(PathHelper.createPaths(3))
+            .build();
+    PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, ms);
     ResultSummary summary = ping.run();
     assertEquals(0, summary.getMaxPaths().getPathCount());
     assertEquals(3, summary.getAsErrors());
@@ -183,20 +104,21 @@ class PingAllTest {
 
   @Test
   void testPingSendingError() throws IOException {
-    class MyWithHandler extends WithIOError {
+    class MyWithHandler extends MockHandler.WithIOError {
       MyWithHandler(ScmpSenderAsync.ResponseHandler handler) {
         super(handler, hdl -> {});
       }
     }
 
-    ScionProvider p =
-        ScionProvider.createSync(
-            () -> new MySync(3),
-            h -> new MyWithHandler(h),
-            Helper::isdAsList,
-            () -> Collections.singletonList(0L),
-            (ia, addr) -> PathHelper.createPaths(3));
-    PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, p);
+    MockService ms =
+        new MockService.Builder()
+            .syncSupplier(() -> new MySync(3))
+            .asyncSupplier(h -> new MyWithHandler(h))
+            .assignments(Helper.isdAsList())
+            .localIsdAses(Collections.singletonList(0L))
+            .localPaths(PathHelper.createPaths(3))
+            .build();
+    PingAll ping = new PingAll(PingAll.Policy.FASTEST_TR_ASYNC, ms);
     ResultSummary summary = ping.run();
     assertEquals(0, summary.getMaxPaths().getPathCount());
     assertEquals(3, summary.getAsErrors());
