@@ -24,7 +24,8 @@ public class MPScionService extends ScionService {
 
   public static MPScionService defaultService() {
     ScionService.closeDefault();
-    return ScionService.defaultService(new Builder());
+    return ScionService.defaultService(
+        new Builder().assignments(DownloadAssignmentsFromWeb.getList()));
   }
 
   protected MPScionService(Builder builder) {
